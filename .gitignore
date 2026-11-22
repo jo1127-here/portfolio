@@ -1,0 +1,9 @@
+__pycache__/
+.ipynb_checkpoints/
+projects/ecg-icd/Data/
+projects/ecg-icd/icd_screening_results/
+projects/stats302/causal_feature_matrix.csv
+projects/stats302/sp500_effects_comparison.csv
+projects/stats401-lab8/lab8/full_corpus/minilm_embeddings.npy
+projects/stats401-lab8/lab8/full_corpus/embedding_input_sha256.txt
+projects/stats401-lab8/lab8/full_corpus/passages.json

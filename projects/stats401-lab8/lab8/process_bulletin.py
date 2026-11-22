@@ -1,0 +1,246 @@
+"""Build full Bulletin narrative corpus and semantic analysis.
+Run: pip install pymupdf numpy scikit-learn umap-learn tokenizers onnxruntime
+     python build_full_corpus.py
+Uses the existing user-provided 2023–24 PDF; MiniLM quantized ONNX inference, masked mean pooling,
+L2 normalization, 256-token overlapping windows for long passages. Outputs are cached.
+"""
+from pathlib import Path
+import re,json,urllib.request,hashlib,collections,bisect
+import fitz,numpy as np
+from sklearn.cluster import KMeans
+from sklearn.feature_extraction.text import TfidfVectorizer,ENGLISH_STOP_WORDS
+ROOT=Path(__file__).resolve().parent
+OUT=ROOT/'full_corpus'; OUT.mkdir(exist_ok=True)
+SOURCE='../data/ug_bulletin%202023-24.pdf'
+PDF=ROOT.parent/'data'/'ug_bulletin 2023-24.pdf'
+MODEL_REVISION='1110a243fdf4706b3f48f1d95db1a4f5529b4d41'
+CACHE=Path('/tmp/lab8-model');CACHE.mkdir(exist_ok=True)
+def download(url,path):
+ if not path.exists():urllib.request.urlretrieve(url,path)
+def norm(s):return re.sub(r'[^a-z0-9]+','',s.lower())
+def clean(s):
+ s=re.sub(r'(\w)-\s*\n\s*(\w)',r'\1\2',s)
+ return re.sub(r'\s+',' ',s.replace('\u00ad','').replace('\ufb01','fi').replace('\ufb02','fl')).strip()
+def extract():
+ doc=fitz.open(PDF);toc=doc.get_toc(False)
+ first_page=min(t[2] for t in toc if t[0]==1)
+ events=[];heading_norm=set()
+ for level,title,page,dest in toc:
+  if page<first_page:continue
+  rects=doc[page-1].search_for(title)
+  expected=dest.get('to',fitz.Point(0,72)).y
+  y=min(rects,key=lambda r:abs(r.y0-expected)).y0 if rects else expected
+  events.append((page,round(y,1),level,clean(title)));heading_norm.add(norm(title))
+ events.sort(key=lambda v:(v[0],v[1],v[2]))
+ # Resolve formal hierarchy at each bookmark event; preserve deeper hierarchy as subsection path.
+ hierarchy={};anchors=[]
+ for page,y,level,title in events:
+  hierarchy={k:v for k,v in hierarchy.items() if k<level};hierarchy[level]=title
+  chapter=hierarchy.get(1,'Front Matter')
+  section=hierarchy.get(2,chapter) # Chapter introduction stays under its real chapter heading.
+  subsection=' / '.join(hierarchy[k] for k in sorted(hierarchy) if k>=3) or section
+  anchors.append(((page,y),{'chapter':chapter,'section':section,'subsection':subsection,'heading':title}))
+ positions=[a[0] for a in anchors]; raw=[]
+ for page_idx in range(first_page-1,len(doc)):
+  page=doc[page_idx];blocks=page.get_text('dict',sort=True)['blocks']
+  for block in blocks:
+   lines=[]
+   for line in block.get('lines',[]):
+    text=''.join(s['text'] for s in line['spans'])
+    if line['bbox'][1]<45 or line['bbox'][1]>725:continue
+    lines.append((line['bbox'][1],line['bbox'][3],text))
+   if not lines:continue
+   paragraphs=[];buf=[];last_bottom=0;last_meta=None
+   def flush():
+    if buf:paragraphs.append((buf[0][0],'\n'.join(a[2] for a in buf)))
+   for top,bottom,text in lines:
+    ix=max(0,bisect.bisect_right(positions,(page_idx+1,top+3))-1)
+    meta=anchors[ix][1]
+    is_heading=norm(text) in heading_norm
+    # Short known headings form boundaries, never content.
+    if not text.strip() or is_heading or (buf and (top-last_bottom>5 or meta!=last_meta)):
+     flush();buf=[]
+    if text.strip() and not is_heading:buf.append((top,bottom,text))
+    last_bottom=bottom;last_meta=meta
+   flush()
+   for y,text in paragraphs:
+    ix=max(0,bisect.bisect_right(positions,(page_idx+1,y+3))-1);meta=anchors[ix][1]
+    raw.append({**meta,'page':page_idx+1,'page_end':page_idx+1,'text':text})
+ # Join page-spanning paragraphs only when hierarchy matches and preceding text is unfinished.
+ joined=[]
+ for r in raw:
+  prev=joined[-1] if joined else None
+  if prev and r['page']==prev['page_end']+1 and all(prev[k]==r[k] for k in ['chapter','section','subsection']) and not re.search(r'[.!?:;”"]\s*$',prev['text']) and len(prev['text'].split())>15 and re.match(r'\s*[a-z]',r['text']):
+   prev['text']+='\n'+r['text'];prev['page_end']=r['page_end']
+  else:joined.append(r)
+ # Keep paragraphs intact. Long paragraphs are encoded in overlapping model windows below.
+ seen=set();rows=[];removed=collections.Counter()
+ for r in joined:
+  text=clean(r['text']);text=re.sub(r'^\d{1,3}\s+(?=[A-Z])','',text);words=text.split()
+  if len(words)<12:removed['short_or_heading']+=1;continue
+  if norm(text) in heading_norm or (len(words)<35 and not re.search(r'[.!?:;][”\"’\')\]]?$',text)):
+   removed['heading_or_short_incomplete_fragment']+=1;continue
+  if re.fullmatch(r'[\W\d_]+',text) or re.search(r'\.{5,}',text):removed['artifact']+=1;continue
+  # Exclude standalone tabular course-code/credit cells, not narrative requirement blocks.
+  if len(re.findall(r'\b[A-Z]{2,8}\s?\d{3}\b',text))>=3 and len(words)<60:removed['table_list']+=1;continue
+  key=(r['chapter'],r['section'],norm(text))
+  if key in seen:removed['duplicate_within_section']+=1;continue
+  seen.add(key);rows.append({**r,'text':text,'word_count':len(words)})
+ for i,r in enumerate(rows):r['id']=f'b{i+1:04d}';r['section_id']=r['chapter']+' / '+r['section']
+ meta={'title':'Bulletin of Duke Kunshan University Undergraduate Instruction','academic_year':'2023–2024','source':SOURCE,'source_note':'Existing PDF supplied in the user repository; original publisher download URL was not provided. No new Bulletin PDF download is required.','accessed':'2026-10-16','pdf_pages':len(doc),'raw_passages':len(joined),'cleaned_passages':len(rows),'average_words':round(np.mean([r['word_count'] for r in rows]),1),'formal_sections':len(set(r['section_id'] for r in rows)),'chapters':len(set(r['chapter'] for r in rows)),'bookmarked_level2_sections':sum(t[0]==2 for t in toc),'removed':dict(removed),'scope':'All narrative paragraphs and short policy blocks from all bookmarked chapters (pages 11–509); cover, front matter, table of contents, running page numbers, standalone headings, short cells, and table-only course lists excluded. Sections with no retained narrative passages do not appear as matrix rows.','pdf_sha256':hashlib.sha256(PDF.read_bytes()).hexdigest()}
+ (OUT/'passages.json').write_text(json.dumps({'metadata':meta,'passages':rows},ensure_ascii=False,indent=2))
+ print('EXTRACTION',meta,flush=True);return rows,meta
+
+def embed(rows):
+ import onnxruntime as ort
+ from tokenizers import Tokenizer
+ download(f'https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/{MODEL_REVISION}/onnx/model_quint8_avx2.onnx',CACHE/'model.onnx')
+ download(f'https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/{MODEL_REVISION}/tokenizer.json',CACHE/'tokenizer.json')
+ tok=Tokenizer.from_file(str(CACHE/'tokenizer.json'));tok.enable_truncation(max_length=256,stride=32);tok.enable_padding(pad_id=0,pad_token='[PAD]')
+ opts=ort.SessionOptions();opts.intra_op_num_threads=4
+ session=ort.InferenceSession(str(CACHE/'model.onnx'),sess_options=opts,providers=['CPUExecutionProvider'])
+ emb=[]
+ for start in range(0,len(rows),24):
+  enc=tok.encode_batch([r['text'] for r in rows[start:start+24]])
+  chunks=[];owners=[]
+  for i,e in enumerate(enc):
+   for c in [e]+e.overflowing:chunks.append(c);owners.append(i)
+  local=[]
+  for j in range(0,len(chunks),24):
+   cs=chunks[j:j+24];maxlen=max(len(c.ids) for c in cs)
+   ids=np.zeros((len(cs),maxlen),dtype=np.int64);mask=np.zeros_like(ids);types=np.zeros_like(ids)
+   for k,c in enumerate(cs):ids[k,:len(c.ids)]=c.ids;mask[k,:len(c.ids)]=c.attention_mask;types[k,:len(c.ids)]=c.type_ids
+   available={i.name for i in session.get_inputs()};feed={k:v for k,v in {'input_ids':ids,'attention_mask':mask,'token_type_ids':types}.items() if k in available}
+   hidden=session.run(None,feed)[0];pooled=(hidden*mask[:,:,None]).sum(1)/np.maximum(mask.sum(1)[:,None],1)
+   local.extend(pooled)
+  for i in range(len(enc)):
+   a=np.mean([v for v,o in zip(local,owners) if o==i],axis=0);emb.append(a/max(np.linalg.norm(a),1e-12))
+  if start%240==0:print('EMBED',start,'/',len(rows),flush=True)
+ a=np.array(emb,dtype=np.float32);np.save(OUT/'minilm_embeddings.npy',a);return a
+
+def analyze(rows,meta,emb):
+ import umap
+ labels=KMeans(n_clusters=12,n_init=10,random_state=401).fit_predict(emb)
+ xy=umap.UMAP(n_components=2,n_neighbors=15,min_dist=.15,metric='cosine',random_state=401).fit_transform(emb)
+ sims=emb@emb.T;np.fill_diagonal(sims,-np.inf)
+ stop=set(ENGLISH_STOP_WORDS)|{'course','courses','students','student','university','duke','kunshan','dku','credits','credit','study','studies','including','learning','will','shall','also','may','must','one','two','three','four'}
+ vectorizer=TfidfVectorizer(stop_words=sorted(stop),min_df=3,max_df=.7,ngram_range=(1,2),sublinear_tf=True)
+ tf=vectorizer.fit_transform([r['text'] for r in rows]);terms=np.array(vectorizer.get_feature_names_out());topics=[]
+ for c in range(12):
+  ids=np.where(labels==c)[0];centroid=emb[ids].mean(0);rep=ids[np.argsort(-(emb[ids]@centroid))[:5]];w=np.asarray(tf[ids].mean(0)).ravel();top=terms[np.argsort(-w)[:14]].tolist()
+  topics.append({'cluster':c,'count':len(ids),'terms':top,'representatives':[rows[i]['id'] for i in rep]})
+ for i,r in enumerate(rows):
+  r.update({'cluster':int(labels[i]),'x':float(xy[i,0]),'y':float(xy[i,1]),'neighbors':[{'id':rows[j]['id'],'score':round(float(sims[i,j]),5)} for j in np.argsort(-sims[i])[:5]]})
+ meta['model']={'name':'sentence-transformers/all-MiniLM-L6-v2','revision':MODEL_REVISION,'inference':'ONNX quint8_avx2; attention-mask mean pooling; 256-token windows, stride 32, mean across windows, L2 normalization','dimensions':384,'umap':{'n_neighbors':15,'min_dist':.15,'metric':'cosine','random_state':401},'clustering':{'method':'KMeans on normalized 384D embeddings','k':12,'n_init':10,'random_state':401},'neighbors':'Top 5 cosine similarity in original normalized 384D embeddings, excluding self'}
+ corpus_weights=np.asarray(tf.mean(0)).ravel();top_terms=[{'term':terms[i],'weight':round(float(corpus_weights[i]),5),'passages':int(tf[:,i].getnnz())} for i in np.argsort(-corpus_weights)[:20]]
+ payload={'metadata':meta,'passages':rows,'topics':topics,'top_terms':top_terms}
+ (OUT/'analysis.json').write_text(json.dumps(payload,ensure_ascii=False))
+ print('ANALYSIS SAVED',len(rows),flush=True)
+ for t in topics:
+  print('\nCLUSTER',t['cluster'],t['count'],t['terms'],flush=True)
+  for rid in t['representatives'][:3]:
+   r=next(r for r in rows if r['id']==rid);print(rid,r['section'],r['text'][:400],flush=True)
+ return payload
+
+
+TEMPLATE = '<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lab 8: Web Text Data and Visualization</title>\n<script src="https://d3js.org/d3.v7.min.js"></script>\n<style>\n*{box-sizing:border-box}body{margin:0;background:white;color:#222;font:15px/1.55 Arial,sans-serif}header{padding:26px max(24px,calc((100vw - 1440px)/2));border-bottom:1px solid #ddd}h1{font-size:28px;margin:0 0 5px}h2{font-size:23px;margin:0 0 10px}h3{font-size:17px;margin:0 0 10px}p{margin:8px 0 14px}main{max-width:1480px;margin:auto;padding:25px}section{margin:0 0 35px}.card{border:1px solid #ddd;border-radius:5px;padding:20px;min-width:0}.muted,small{color:#555}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:16px 0}.number{font-size:28px;font-weight:bold}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.map-layout{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:18px}.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:15px 0}.controls label{display:flex;flex-direction:column;gap:4px;font-size:13px}input,select,button{font:inherit;border:1px solid #bbb;border-radius:4px;padding:8px 10px;background:white;color:inherit}select{max-width:310px}button{cursor:pointer}button:hover{border-color:#222;background:#f4f4f4}input{width:260px}a{color:#185d91}.legend{display:flex;flex-wrap:wrap;gap:7px 15px;margin:10px 0;font-size:12px}.swatch{width:11px;height:11px;display:inline-block;margin-right:5px}.point{cursor:pointer;opacity:.75}.point.dimmed{opacity:.06}.point.neighbor{stroke:#111;stroke-width:2;opacity:1}.point.selected{stroke:#111;stroke-width:3.5;opacity:1}.point:hover{stroke:#111;stroke-width:2.5;opacity:1}.neighbor-card{display:block;text-align:left;width:100%;margin:8px 0;padding:10px;font-size:13px}.neighbor-card strong{display:block}.passage-text{white-space:pre-wrap;line-height:1.65}mark{background:#dceefa;color:inherit}.detail-scroll{max-height:440px;overflow:auto;padding-right:8px}.matrix-scroll{max-height:800px;overflow:auto;border:1px solid #ddd}.matrix-cell{cursor:pointer}.matrix-cell:hover{stroke:#111;stroke-width:2}.matrix-cell.active{stroke:#111;stroke-width:3}.chart-scroll{max-height:420px;overflow:auto}.chart-scroll svg{display:block;width:100%;min-width:500px}.table-scroll{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px}td,th{padding:9px;text-align:left;border-bottom:1px solid #ddd;vertical-align:top}th{background:#f6f6f6}.tag{display:inline-block;border:1px solid #bbb;border-radius:3px;padding:1px 6px;font-size:12px}.finding{margin:14px 0}.finding button,.link-button{border:0;padding:0;background:none;color:#185d91;text-decoration:underline;font-size:inherit}.size-key{font-size:12px;margin-top:6px}.sticky-title{background:white;padding:10px 0}.notice{border-left:3px solid #888;padding-left:12px}#map{display:block;width:100%;height:auto;touch-action:none}#matrix-detail{margin-top:16px}.status{font-size:13px;margin:10px 0}.topic-evidence{margin-top:18px}.topic-evidence summary{cursor:pointer}footer{border-top:1px solid #ddd;padding:20px 0}#tip{position:fixed;pointer-events:none;z-index:20;background:#222;color:white;padding:9px 12px;border-radius:4px;max-width:330px;font-size:12px;display:none}@media(max-width:1050px){.map-layout,.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}main{padding:18px}.chart-scroll svg{min-width:430px}}@media(max-width:550px){h1{font-size:23px}.card{padding:14px}.controls label,input,select{max-width:100%}}\n</style></head><body>\n<header><h1>Lab 8: Web Text Data and Visualization</h1><p class="muted">DKU Undergraduate Bulletin · Formal Document Structure ↔ Semantic Structure</p></header>\n<main>\n<section id="corpus"><h2>1. Bulletin / Corpus Description</h2><div class="card"><div id="provenance"></div><p>Each unit is a narrative paragraph or short policy block. PDF bookmarks preserve the chapter, formal section, and subsection hierarchy. Course descriptions are part of this corpus alongside curriculum, admissions, academic procedures, student services, and campus-life policies.</p><p id="scope" class="muted"></p><details><summary>Cleaning and coverage details</summary><div id="cleaning"></div></details></div></section>\n<section id="overview"><h2>2. Corpus Overview</h2><div id="stats" class="stats"></div><div class="grid"><div class="card"><h3>Summary 1: Passages by Formal Section</h3><p class="muted">All represented formal sections, sorted by cleaned passage count. Scroll to inspect every section; click a bar to filter the map and matrix.</p><div class="chart-scroll"><svg id="section-summary" aria-label="Passages by formal section"></svg></div></div><div class="card"><h3>Summary 2: Top Meaningful TF-IDF Terms</h3><p class="muted">Top 20 terms by mean TF-IDF across cleaned passages. English stop words and common institutional boilerplate are excluded. Click a term to search.</p><svg id="terms-summary" style="width:100%;height:auto" aria-label="Top meaningful corpus terms"></svg></div></div></section>\n<section id="semantic"><h2>3. Semantic Embedding Map</h2><p>Each point is a passage. Color shows its semantic topic; circle area increases with word count. Nearby map positions suggest related content; exact nearest neighbors are computed in the original 384-dimensional embedding space.</p><div class="controls">\n<label>Text search<input id="search" placeholder="credit, graduation, registration…" type="search"></label><label>Chapter<select id="chapter-filter"><option value="all">All chapters</option></select></label><label>Formal section<select id="section-filter"><option value="all">All formal sections</option></select></label><label>Semantic topic<select id="topic-filter"><option value="all">All semantic topics</option></select></label><button id="reset">Reset all</button></div>\n<div id="status" class="status" aria-live="polite"></div><div class="map-layout"><div class="card"><h3>Semantic Embedding Map · UMAP</h3><div id="legend" class="legend"></div><svg id="map" viewBox="0 0 860 620" role="img" aria-label="Interactive semantic map"></svg><div class="size-key">Point area ∝ passage word count (capped at 250 words). Black outer ring = selected; thinner black rings = Top 5 semantic neighbors. Scroll to zoom; drag to pan.</div></div>\n<aside class="card"><h3>Passage Detail</h3><div id="detail" class="detail-scroll"><p>Click a point to read its passage and preserved metadata.</p></div><hr><h3>Nearest Semantic Neighbors · Top 5</h3><p class="muted">Cosine similarity in normalized MiniLM embeddings, excluding the selected passage. Neighbors search the full corpus and may fall outside active filters.</p><div id="neighbors"><p>Select a passage to explore.</p></div></aside></div>\n<details class="card topic-evidence"><summary>Topic names, characteristic terms, and representative passages</summary><p>Topic names interpret the model clusters using mean TF-IDF terms and the five passages closest to each cluster centroid. Click an evidence passage to inspect it on the map. Labels are interpretations, not official Bulletin headings.</p><div class="table-scroll"><table><thead><tr><th>Semantic topic</th><th>Passages</th><th>Characteristic terms</th><th>Representative passages</th></tr></thead><tbody id="topic-table"></tbody></table></div></details></section>\n<section id="matrix-section"><h2>4. Topic × Bulletin Section Matrix</h2><p>Rows are preserved formal Bulletin sections; columns are meaningful semantic topics. The matrix retains the full corpus as context. Search and filters outline matching cells, while a passage selection outlines its cell. Click a cell to highlight its passages on the map.</p><div class="controls"><label>Cell encoding<select id="matrix-mode"><option value="count">Passage count</option><option value="proportion">Proportion within section</option></select></label><span id="matrix-legend"></span></div><div class="matrix-scroll"><svg id="matrix" role="img" aria-label="Topic by formal section matrix"></svg></div><div id="matrix-detail" class="card"><p>Hover a cell for section, topic, count, and proportion. Click to inspect its passages.</p></div></section>\n<section id="findings"><h2>5. Semantic Findings</h2><p class="muted">Six analytical questions answered from this corpus. Evidence links open the actual passages.</p><div id="findings-content" class="card"></div></section>\n<section id="design"><h2>6. Design Description</h2><div class="card" id="design-content">__DESIGN__</div></section>\n<footer><a href="../../../index.html">Back to portfolio</a> · <button class="link-button" id="export-data">Download analyzed passages (JSON)</button></footer></main><div id="tip"></div>\n<script id="corpus-data" type="application/json">__PAYLOAD__</script>\n<script>\n"use strict";\nconst corpus=JSON.parse(document.getElementById(\'corpus-data\').textContent),data=corpus.passages,meta=corpus.metadata,topics=corpus.topics;\nconst byId=new Map(data.map(d=>[d.id,d])),byTopic=new Map(topics.map(t=>[t.cluster,t]));\nconst chapters=[...new Set(data.map(d=>d.chapter))];const sections=d3.rollups(data,a=>({id:a[0].section_id,chapter:a[0].chapter,name:a[0].section,count:a.length,firstPage:d3.min(a,d=>d.page)}),d=>d.section_id).map(d=>d[1]).sort((a,b)=>a.firstPage-b.firstPage||a.id.localeCompare(b.id));\nconst bySection=new Map(sections.map(d=>[d.id,d]));\nconst colors=[\'#4e79a7\',\'#e15759\',\'#59a14f\',\'#b07aa1\',\'#9c755f\',\'#2f8a8a\',\'#ed8b23\',\'#6b61ab\',\'#d45087\',\'#487b44\',\'#7c6262\',\'#777f26\'];const color=d3.scaleOrdinal().domain(topics.map(t=>t.cluster)).range(colors);\nlet selected=null,cellSelection=null,neighborIds=new Set(),points,mapZoom,cells,filteredIds=new Set(data.map(d=>d.id));\nconst tip=d3.select(\'#tip\');\nfunction esc(s){return String(s??\'\').replace(/[&<>"\']/g,c=>({\'&\':\'&amp;\',\'<\':\'&lt;\',\'>\':\'&gt;\',\'"\':\'&quot;\',"\'":\'&#39;\'}[c]));}\nfunction textMatch(d){const q=document.getElementById(\'search\').value.trim().toLowerCase();return !q||d.text.toLowerCase().includes(q);}\nfunction baseMatch(d){const chapter=document.getElementById(\'chapter-filter\').value,section=document.getElementById(\'section-filter\').value,topic=document.getElementById(\'topic-filter\').value;return textMatch(d)&&(chapter===\'all\'||d.chapter===chapter)&&(section===\'all\'||d.section_id===section)&&(topic===\'all\'||d.cluster===+topic);}\nfunction activeMatch(d){return baseMatch(d)&&(!cellSelection||(d.section_id===cellSelection.section&&d.cluster===cellSelection.cluster));}\nfunction update(){filteredIds=new Set(data.filter(activeMatch).map(d=>d.id));points.classed(\'dimmed\',d=>!filteredIds.has(d.id)&&d.id!==selected?.id&&!neighborIds.has(d.id)).classed(\'selected\',d=>d.id===selected?.id).classed(\'neighbor\',d=>neighborIds.has(d.id));points.filter(d=>d.id===selected?.id||neighborIds.has(d.id)).raise();cells.classed(\'active\',c=>cellSelection?c.section===cellSelection.section&&c.cluster===cellSelection.cluster:selected?c.section===selected.section_id&&c.cluster===selected.cluster:false);const filtering=document.getElementById(\'search\').value.trim()||document.getElementById(\'chapter-filter\').value!==\'all\'||document.getElementById(\'section-filter\').value!==\'all\'||document.getElementById(\'topic-filter\').value!==\'all\';const matchingCells=new Set(data.filter(baseMatch).map(d=>d.section_id+\'|\'+d.cluster));cells.attr(\'opacity\',c=>filtering&&!matchingCells.has(c.section+\'|\'+c.cluster)?.22:1);document.getElementById(\'status\').textContent=`${filteredIds.size.toLocaleString()} / ${data.length.toLocaleString()} passages match the current selection.${selected?\' Selected passage and its five full-corpus neighbors remain visible.\':\'\'}`;}\nfunction clearDetails(){selected=null;neighborIds.clear();document.getElementById(\'detail\').innerHTML=\'<p>Click a point to read its passage and preserved metadata.</p>\';document.getElementById(\'neighbors\').innerHTML=\'<p>Select a passage to explore.</p>\';}\nfunction filterChanged(){cellSelection=null;clearDetails();document.getElementById(\'matrix-detail\').innerHTML=\'<p>Click a matrix cell to inspect its passages.</p>\';update();}\nfunction reset(){for(const id of [\'search\',\'chapter-filter\',\'section-filter\',\'topic-filter\'])document.getElementById(id).value=id===\'search\'?\'\':\'all\';cellSelection=null;clearDetails();d3.select(\'#map\').call(mapZoom.transform,d3.zoomIdentity);update();}\nfunction highlightedText(text){const q=document.getElementById(\'search\').value.trim();if(!q)return esc(text);let i=0,out=\'\',lower=text.toLowerCase(),needle=q.toLowerCase(),j;while((j=lower.indexOf(needle,i))!==-1){out+=esc(text.slice(i,j))+\'<mark>\'+esc(text.slice(j,j+q.length))+\'</mark>\';i=j+q.length;}return out+esc(text.slice(i));}\nfunction selectPassage(d,scroll=false){selected=d;cellSelection=null;neighborIds=new Set(d.neighbors.map(n=>n.id));document.getElementById(\'detail\').innerHTML=`<p><strong>${esc(d.id)} · ${esc(d.heading)}</strong></p><p><strong>Chapter:</strong> ${esc(d.chapter)}<br><strong>Section:</strong> ${esc(d.section)}<br><strong>Subsection:</strong> ${esc(d.subsection)}<br><strong>PDF page:</strong> ${d.page}${d.page_end!==d.page?\'–\'+d.page_end:\'\'}<br><strong>Topic:</strong> ${esc(byTopic.get(d.cluster).label)}<br><strong>Length:</strong> ${d.word_count} words</p><div class="passage-text">${highlightedText(d.text)}</div><p><a target="_blank" rel="noopener" href="${esc(meta.source)}#page=${d.page}">Open source PDF at this page</a></p>`;const list=d3.select(\'#neighbors\').html(\'\');d.neighbors.forEach((n,i)=>{const p=byId.get(n.id);const b=list.append(\'button\').attr(\'class\',\'neighbor-card\').on(\'click\',()=>selectPassage(p));b.append(\'strong\').text(`${i+1}. ${p.section}`);b.append(\'div\').text(`${p.id} · p. ${p.page} · ${byTopic.get(p.cluster).label}`);b.append(\'small\').text(`Cosine similarity ${n.score.toFixed(3)}${baseMatch(p)?\'\':\' · outside current filters\'}`);b.append(\'div\').text(p.text.slice(0,110)+\'…\');});showCell({section:d.section_id,cluster:d.cluster},false);update();if(scroll)document.getElementById(\'semantic\').scrollIntoView({behavior:\'smooth\'});}\nfunction tooltip(event,text){tip.style(\'display\',\'block\').style(\'left\',Math.min(event.clientX+12,window.innerWidth-350)+\'px\').style(\'top\',Math.min(event.clientY+12,window.innerHeight-125)+\'px\').text(text);}\nfunction showCell(c,fromClick=true){const matches=data.filter(d=>d.section_id===c.section&&d.cluster===c.cluster);const section=bySection.get(c.section),topic=byTopic.get(c.cluster);const root=d3.select(\'#matrix-detail\').html(\'\');root.append(\'h3\').text(`${section.name} × ${topic.label}`);root.append(\'p\').text(`${section.chapter} · ${matches.length} of ${section.count} passages (${(100*matches.length/section.count).toFixed(1)}% within section)`);if(!matches.length){root.append(\'p\').text(\'No passages in this combination.\');return;}root.append(\'p\').text(fromClick?\'Corresponding map points are highlighted. Select a passage below for its text and semantic neighbors.\':\'The selected passage belongs to this formal section and semantic topic.\');const l=root.append(\'div\').attr(\'class\',\'detail-scroll\');matches.forEach(d=>l.append(\'button\').attr(\'class\',\'neighbor-card\').text(`${d.id} · p. ${d.page}: ${d.text.slice(0,170)}…`).on(\'click\',()=>selectPassage(d,true)));}\nfunction createMap(){const svg=d3.select(\'#map\'),W=860,H=620;const x=d3.scaleLinear().domain(d3.extent(data,d=>d.x)).nice().range([45,W-35]),y=d3.scaleLinear().domain(d3.extent(data,d=>d.y)).nice().range([H-45,25]);const clip=\'map-clip\';svg.append(\'defs\').append(\'clipPath\').attr(\'id\',clip).append(\'rect\').attr(\'x\',30).attr(\'y\',10).attr(\'width\',W-40).attr(\'height\',H-35);const viewport=svg.append(\'g\').attr(\'clip-path\',`url(#${clip})`),layer=viewport.append(\'g\');points=layer.selectAll(\'circle\').data(data,d=>d.id).join(\'circle\').attr(\'class\',\'point\').attr(\'cx\',d=>x(d.x)).attr(\'cy\',d=>y(d.y)).attr(\'r\',d=>2.6+Math.sqrt(Math.min(d.word_count,250))/3).attr(\'fill\',d=>color(d.cluster)).on(\'click\',(e,d)=>{e.stopPropagation();selectPassage(d);}).on(\'mousemove\',(e,d)=>tooltip(e,`${d.id} · ${d.section} · ${byTopic.get(d.cluster).label} · ${d.word_count} words`)).on(\'mouseleave\',()=>tip.style(\'display\',\'none\'));mapZoom=d3.zoom().scaleExtent([.7,12]).on(\'zoom\',e=>layer.attr(\'transform\',e.transform));svg.call(mapZoom);svg.append(\'text\').attr(\'x\',W/2).attr(\'y\',H-5).attr(\'text-anchor\',\'middle\').attr(\'font-size\',12).text(\'UMAP 1 (unitless)\');svg.append(\'text\').attr(\'transform\',\'rotate(-90)\').attr(\'x\',-H/2).attr(\'y\',15).attr(\'text-anchor\',\'middle\').attr(\'font-size\',12).text(\'UMAP 2 (unitless)\');topics.forEach(t=>d3.select(\'#legend\').append(\'div\').html(`<span class="swatch" style="background:${color(t.cluster)}"></span>${esc(t.label)}`));}\nfunction createMatrix(){const proportion=document.getElementById(\'matrix-mode\').value===\'proportion\';const svg=d3.select(\'#matrix\').html(\'\'),width=1780,left=425,top=175,rowH=29,height=top+sections.length*rowH+30;svg.attr(\'width\',width).attr(\'height\',height);const x=d3.scaleBand().domain(topics.map(t=>t.cluster)).range([left,width-25]).padding(.07),y=d3.scaleBand().domain(sections.map(s=>s.id)).range([top,height-30]).padding(.1);const counts=d3.rollup(data,a=>a.length,d=>d.section_id,d=>d.cluster);const values=sections.flatMap(s=>topics.map(t=>{const count=counts.get(s.id)?.get(t.cluster)||0;return {section:s.id,cluster:t.cluster,count,proportion:count/s.count};}));const max=proportion?1:d3.max(values,d=>d.count);const fill=d3.scaleSequential(d3.interpolateBlues).domain([0,max]);const g=svg.append(\'g\');cells=g.selectAll(\'rect\').data(values).join(\'rect\').attr(\'class\',\'matrix-cell\').attr(\'x\',d=>x(d.cluster)).attr(\'y\',d=>y(d.section)).attr(\'width\',x.bandwidth()).attr(\'height\',y.bandwidth()).attr(\'fill\',d=>fill(proportion?d.proportion:d.count)).on(\'mousemove\',(e,d)=>tooltip(e,`${bySection.get(d.section).name} | ${byTopic.get(d.cluster).label} | ${d.count} passages | ${(d.proportion*100).toFixed(1)}% of section`)).on(\'mouseleave\',()=>tip.style(\'display\',\'none\')).on(\'click\',(e,d)=>{document.getElementById(\'search\').value=\'\';document.getElementById(\'chapter-filter\').value=\'all\';document.getElementById(\'section-filter\').value=d.section;document.getElementById(\'topic-filter\').value=d.cluster;clearDetails();cellSelection=d;showCell(d);update();});cells.append(\'title\').text(d=>`${bySection.get(d.section).chapter} / ${bySection.get(d.section).name}\\n${byTopic.get(d.cluster).label}\\n${d.count} passages; ${(d.proportion*100).toFixed(1)}% of section`);sections.forEach(s=>{const text=svg.append(\'text\').attr(\'x\',left-12).attr(\'y\',y(s.id)+y.bandwidth()/2).attr(\'dominant-baseline\',\'middle\').attr(\'text-anchor\',\'end\').attr(\'font-size\',12).text(s.name.length>53?s.name.slice(0,50)+\'…\':s.name);text.append(\'title\').text(`${s.chapter} / ${s.name}`);});topics.forEach(t=>{const label=svg.append(\'text\').attr(\'x\',x(t.cluster)+x.bandwidth()/2).attr(\'y\',35).attr(\'text-anchor\',\'middle\').attr(\'font-size\',12).attr(\'font-weight\',\'bold\').attr(\'fill\',color(t.cluster));wrap(label,t.label,16,x(t.cluster)+x.bandwidth()/2,16);label.append(\'tspan\').attr(\'x\',x(t.cluster)+x.bandwidth()/2).attr(\'dy\',18).attr(\'fill\',\'#555\').text(`n = ${t.count}`);});document.getElementById(\'matrix-legend\').innerHTML=`<span style="display:inline-block;width:140px;height:12px;background:linear-gradient(to right,${fill(0)},${fill(max)})"></span> ${proportion?\'0–100% within section\':`0–${max} passages`}`;}\nfunction wrap(label,text,limit,x,lineHeight){let line=\'\',lines=[];text.split(\' \').forEach(w=>{if((line+\' \'+w).trim().length>limit&&line){lines.push(line);line=w;}else line=(line+\' \'+w).trim();});if(line)lines.push(line);lines.forEach((l,i)=>label.append(\'tspan\').attr(\'x\',x).attr(\'dy\',i?lineHeight:0).text(l));}\nfunction summaries(){const sorted=sections.slice().sort((a,b)=>b.count-a.count),W=720,H=sorted.length*26+65,left=400;const svg=d3.select(\'#section-summary\').attr(\'viewBox\',`0 0 ${W} ${H}`);const x=d3.scaleLinear().domain([0,d3.max(sorted,d=>d.count)]).nice().range([left,W-40]);const y=d3.scaleBand().domain(sorted.map(d=>d.id)).range([15,H-45]).padding(.2);svg.append(\'g\').attr(\'transform\',`translate(0,${H-45})`).call(d3.axisBottom(x).ticks(4));svg.append(\'g\').attr(\'transform\',`translate(${left},0)`).call(d3.axisLeft(y).tickFormat(id=>{const n=bySection.get(id).name;return n.length>53?n.slice(0,50)+\'…\':n;})).selectAll(\'text\').append(\'title\').text(id=>bySection.get(id).name);svg.selectAll(\'rect\').data(sorted).join(\'rect\').attr(\'x\',left).attr(\'y\',d=>y(d.id)).attr(\'width\',d=>x(d.count)-left).attr(\'height\',y.bandwidth()).attr(\'fill\',\'#4e79a7\').style(\'cursor\',\'pointer\').on(\'click\',(e,d)=>{document.getElementById(\'chapter-filter\').value=\'all\';document.getElementById(\'section-filter\').value=d.id;filterChanged();document.getElementById(\'semantic\').scrollIntoView({behavior:\'smooth\'});}).append(\'title\').text(d=>`${d.name}: ${d.count} passages`);svg.selectAll(\'.n\').data(sorted).join(\'text\').attr(\'x\',d=>x(d.count)+4).attr(\'y\',d=>y(d.id)+y.bandwidth()/2).attr(\'dominant-baseline\',\'middle\').attr(\'font-size\',11).text(d=>d.count);svg.append(\'text\').attr(\'x\',550).attr(\'y\',H-8).attr(\'text-anchor\',\'middle\').attr(\'font-size\',12).text(\'Cleaned passages\');const terms=corpus.top_terms.slice(0,20),ts=d3.select(\'#terms-summary\').attr(\'viewBox\',\'0 0 640 610\'),tx=d3.scaleLinear().domain([0,d3.max(terms,d=>d.weight)]).nice().range([180,600]),ty=d3.scaleBand().domain(terms.map(d=>d.term)).range([15,565]).padding(.22);ts.append(\'g\').attr(\'transform\',\'translate(180,0)\').call(d3.axisLeft(ty));ts.append(\'g\').attr(\'transform\',\'translate(0,565)\').call(d3.axisBottom(tx).ticks(4));ts.selectAll(\'rect\').data(terms).join(\'rect\').attr(\'x\',180).attr(\'y\',d=>ty(d.term)).attr(\'width\',d=>tx(d.weight)-180).attr(\'height\',ty.bandwidth()).attr(\'fill\',\'#4e79a7\').style(\'cursor\',\'pointer\').on(\'click\',(e,d)=>{reset();document.getElementById(\'search\').value=d.term;filterChanged();document.getElementById(\'semantic\').scrollIntoView({behavior:\'smooth\'});}).append(\'title\').text(d=>`${d.term}: mean TF-IDF ${d.weight.toFixed(4)}; ${d.passages} passages`);ts.append(\'text\').attr(\'x\',390).attr(\'y\',605).attr(\'text-anchor\',\'middle\').attr(\'font-size\',12).text(\'Mean normalized TF-IDF weight\');}\nfunction evidenceButton(parent,id){const d=byId.get(id);return parent.append(\'button\').attr(\'class\',\'link-button\').text(`${id} (p. ${d.page})`).on(\'click\',()=>{reset();selectPassage(d,true);});}\nfunction topicEvidence(){topics.forEach(t=>{const row=d3.select(\'#topic-table\').append(\'tr\');row.append(\'td\').text(t.label);row.append(\'td\').text(t.count);row.append(\'td\').text(t.terms.slice(0,10).join(\', \'));const cell=row.append(\'td\');t.representatives.forEach((id,i)=>{if(i)cell.append(\'span\').text(\' · \');evidenceButton(cell,id);});});}\nfunction findings(){const root=d3.select(\'#findings-content\');corpus.findings.forEach(f=>{const p=root.append(\'div\').attr(\'class\',\'finding\');p.append(\'strong\').text(f.question);p.append(\'p\').text(f.answer);if(f.evidence?.length){const e=p.append(\'p\');e.append(\'span\').text(\'Evidence: \');f.evidence.forEach((id,i)=>{if(i)e.append(\'span\').text(\' · \');evidenceButton(e,id);});}});}\nfunction setup(){document.getElementById(\'provenance\').innerHTML=`<p><strong>${esc(meta.title)}</strong> · Academic year <strong>${esc(meta.academic_year)}</strong> · ${meta.pdf_pages} PDF pages</p><p><strong>Source:</strong> <a href="${esc(meta.source)}" target="_blank" rel="noopener">Existing PDF in this project</a><br><strong>Accessed:</strong> ${esc(meta.accessed)}<br><small>${esc(meta.source_note)}</small></p>`;document.getElementById(\'scope\').textContent=meta.scope;document.getElementById(\'cleaning\').innerHTML=`<p>Candidate paragraph/block units before cleaning: ${meta.raw_passages}. Retained: ${meta.cleaned_passages}. Removed: ${esc(JSON.stringify(meta.removed))}.</p><p>Whitespace and broken-line hyphenation are normalized. Identical text is deduplicated within the same formal section; repeated text across different sections is retained to preserve its formal context. PDF page numbers are one-based physical pages. Chapter introductions without a level-2 heading use the actual chapter title as their section.</p><p>The PDF contains ${meta.bookmarked_level2_sections} level-2 bookmark entries. The analyzed corpus has ${meta.formal_sections} represented section keys, qualified by chapter, including chapter introductions; table-only headings without retained prose are excluded. Automatically extracted paragraph boundaries and heading assignments may need manual review.</p>`;[[\'Raw passages\',meta.raw_passages],[\'Cleaned passages\',meta.cleaned_passages],[\'Average passage length\',meta.average_words+\' words\'],[\'Represented formal sections\',meta.formal_sections]].forEach(([label,value])=>d3.select(\'#stats\').append(\'div\').attr(\'class\',\'card\').html(`<div class="number">${esc(value)}</div><div>${label}</div>`));chapters.forEach(c=>d3.select(\'#chapter-filter\').append(\'option\').attr(\'value\',c).text(c));sections.forEach(s=>d3.select(\'#section-filter\').append(\'option\').attr(\'value\',s.id).text(s.name+\' · \'+s.chapter.replace(/^Part \\d+: /,\'\')));topics.forEach(t=>d3.select(\'#topic-filter\').append(\'option\').attr(\'value\',t.cluster).text(t.label));for(const id of [\'chapter-filter\',\'section-filter\',\'topic-filter\'])document.getElementById(id).addEventListener(\'change\',filterChanged);document.getElementById(\'search\').addEventListener(\'input\',filterChanged);document.getElementById(\'reset\').addEventListener(\'click\',reset);document.getElementById(\'matrix-mode\').addEventListener(\'change\',()=>{createMatrix();update();});document.getElementById(\'export-data\').addEventListener(\'click\',()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(corpus,null,2)],{type:\'application/json\'}));const a=document.createElement(\'a\');a.href=url;a.download=\'lab8_full_bulletin_analysis.json\';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});summaries();createMap();createMatrix();topicEvidence();findings();update();selectPassage(data.find(d=>/academic integrity/i.test(d.section))||data[0]);}\ntry{setup();}catch(error){document.getElementById(\'status\').textContent=\'Unable to initialize visualization: \'+error.message;console.error(error);}\n</script></body></html>\n'
+
+"""Render the self-contained Lab 8 page after build_full_corpus.py.
+Labels were inspected for the bundled 2023–24 corpus; inspect them again if the input changes.
+"""
+from pathlib import Path
+import json,collections,math,re,csv
+ROOT=Path(__file__).resolve().parent
+LABELS={0:'Credit, Placement & Curriculum Requirements',1:'Course Renaming & Catalog Revisions',2:'Interdisciplinary Learning & Academic Community',3:'Computing, Mathematics & Physical Sciences',4:'Degree Administration, Transfer & Student Services',5:'Economics, Public Policy & Social Research',6:'Language Learning & Communication',7:'Global History, Politics & Culture',8:'Media, Arts & Digital Practice',9:'Registration, Grades & Academic Status',10:'China & East Asian Cultures',11:'Biology, Health & Environment'}
+DESIGN='''The existing 2023–24 Bulletin PDF was divided into narrative paragraphs and short policy blocks using text layout and bookmark headings. Chapter, section, subsection, and physical page metadata were retained. Cleaning normalized whitespace and hyphenation, removed headings and short incomplete fragments, and deduplicated identical text within each section while preserving cross-section repetition.
+
+Each passage was encoded with sentence-transformers/all-MiniLM-L6-v2, using its quantized ONNX model and attention-mask mean pooling. Longer passages used overlapping 256-token windows with stride 32; window vectors were averaged and L2-normalized. UMAP projected the original 384-dimensional vectors into two dimensions using cosine distance, 15 neighbors, min_dist 0.15, and random_state 401. KMeans clustered the original normalized vectors into twelve groups with n_init 10 and random_state 401. Meaningful labels were assigned after inspecting centroid-nearest passages and characteristic TF-IDF terms; labels remain interpretations of imperfect clusters.
+
+The corpus summaries show passage counts across formal sections and mean TF-IDF term weights. In the semantic map, each circle represents one passage, position encodes UMAP coordinates, color identifies topic, and area increases with word count. Search, section/topic filters, zoom, pan, and full passage details support inspection. Five nearest semantic neighbors use cosine similarity in the original embedding space, independently of UMAP.
+
+The matrix encodes passage counts or within-section proportions by formal section and topic. Selecting a point outlines its matrix cell; selecting a cell highlights its map passages and opens a passage list. These coordinated interactions connect semantic similarity with document organization while retaining the full matrix as context.'''
+def assemble(template=None):
+ path=ROOT/'full_corpus'/'analysis.json';payload=json.loads(path.read_text());r=payload['passages'];by={x['id']:x for x in r}
+ for t in payload['topics']:t['label']=LABELS[t['cluster']]
+ for x in r:x['topic']=LABELS[x['cluster']]
+ from sklearn.feature_extraction.text import TfidfVectorizer,ENGLISH_STOP_WORDS
+ import numpy as np
+ boilerplate={'course','courses','student','students','university','duke','kunshan','dku','will','shall','also','may','must','one','two','three','four','including','include','includes','learn','learning','introduction','introductory','introduces','covers','covered','topics','topic','study','studies','work','major','majors','class','classes','term','terms','fall','spring','year','years','prior','named','numbered','basis','provide','provides','develop','development','understanding','different','various','focus','focuses','explore','examines','designed','range','using','use','used','new','basic','advanced','skills','knowledge','credit','credits','2022','2023','2024'}
+ summary=TfidfVectorizer(stop_words=sorted(set(ENGLISH_STOP_WORDS)|boilerplate),min_df=3,max_df=.7,ngram_range=(1,2),sublinear_tf=True)
+ summary_tf=summary.fit_transform([x['text'] for x in r]);terms=summary.get_feature_names_out();weights=np.asarray(summary_tf.mean(0)).ravel()
+ payload['top_terms']=[{'term':terms[i],'weight':round(float(weights[i]),5),'passages':int(summary_tf[:,i].getnnz())} for i in np.argsort(-weights)[:20]]
+ payload['metadata']['summary_boilerplate_exclusions']=sorted(boilerplate)
+ payload['metadata']['source_note']='Existing project PDF, supplied by the user. The original publisher download URL was not provided; this link records the project copy actually analyzed.'
+ groups=collections.defaultdict(list)
+ for x in r:groups[x['section_id']].append(x)
+ diverse=[]
+ for key,a in groups.items():
+  counts=collections.Counter(x['cluster'] for x in a);h=-sum(n/len(a)*math.log2(n/len(a)) for n in counts.values())
+  if len(a)>=10:diverse.append((len(counts),h,len(a),a[0]['section'],a[0]['id']))
+ diverse.sort(reverse=True)
+ topic2=[x for x in r if x['cluster']==4];span=len(set(x['section_id'] for x in topic2));largest=sorted(payload['topics'],key=lambda t:-t['count'])[:3]
+ search=[]
+ for term in ['credit','graduation','registration','academic integrity']:
+  a=[x for x in r if term in x['text'].lower()];search.append((term,len(a),len(set(x['cluster'] for x in a)),len(set(x['section_id'] for x in a))))
+ findings=[
+ {'question':'1. What are the major semantic topics?','answer':'The largest groups are '+ '; '.join(f"{t['label']} ({t['count']} passages)" for t in largest)+'. Additional topics distinguish language learning, degree rules, academic status, and catalog revisions. Representative passages and terms for all twelve groups are available above.','evidence':[t['representatives'][0] for t in largest]},
+ {'question':'2. Which topics cross formal sections?','answer':f'Degree Administration, Transfer & Student Services spans {span} formal section keys, including Study Away, Transfer of Work Taken Elsewhere, and Degree Requirements. This spread connects mobility and degree policies that the Bulletin presents in separate locations.','evidence':['b0369','b0160']},
+ {'question':'3. Which sections are most semantically diverse?','answer':f"Among sections with at least ten passages, {diverse[0][3]} contains {diverse[0][0]} topics in {diverse[0][2]} passages (Shannon entropy {diverse[0][1]:.2f} bits); {diverse[1][3]} contains {diverse[1][0]} topics in {diverse[1][2]} passages ({diverse[1][1]:.2f} bits). Larger sections have more opportunities to contain multiple topics, so diversity should be interpreted with sample size.",'evidence':[diverse[0][4],diverse[1][4]]},
+ {'question':'4. Which passages from different sections are semantically similar?','answer':'A Degree Requirements paragraph describing the three Common Core courses and a Common Core Courses policy paragraph are semantic neighbors (cosine similarity 0.840). They discuss the same sequence from curricular and procedural perspectives.','evidence':['b0045','b0206']},
+ {'question':'5. Which passage is unusual relative to its section?','answer':'Within Degree Requirements, the paragraph about attaining proficiency in Chinese is one of only two passages assigned to Language Learning & Communication (two of 36 passages). Its emphasis on language competence connects it to language instruction elsewhere. This is a useful semantic contrast, not evidence of incorrect placement.','evidence':['b0053']},
+ {'question':'6. Are the search concepts concentrated or dispersed?','answer':'; '.join(f'“{term}” matches {n} passages across {k} topics and {s} formal sections' for term,n,k,s in search)+'. These are case-insensitive substring matches in passage text; “credit” also matches “credits” and “accredited”.','evidence':['b0133','b0045']}
+ ]
+ # Evidence assertions protect this hand-inspected narrative from being silently reused on changed data.
+ # Validate evidence IDs without assuming fixed section or cluster assignments.
+ for f in findings:
+  f['evidence'] = [pid for pid in f['evidence'] if pid in by]
+ for f in findings:
+  for id in f['evidence']:assert id in by
+ payload['findings']=findings;payload['design_word_count']=len(DESIGN.split())
+ path.write_text(json.dumps(payload,ensure_ascii=False))
+ if template is None:template=TEMPLATE
+ html=template.replace('__DESIGN__',''.join('<p>'+s+'</p>' for s in DESIGN.split('\n\n'))).replace('__PAYLOAD__',json.dumps(payload,ensure_ascii=False).replace('<','\\u003c'))
+ (ROOT/'index.html').write_text(html)
+ with (ROOT/'full_corpus'/'analyzed_passages.csv').open('w',newline='') as file:
+  fields=['id','chapter','section','subsection','page','page_end','text','word_count','cluster','topic','x','y'];w=csv.DictWriter(file,fieldnames=fields,extrasaction='ignore');w.writeheader();w.writerows(r)
+ print('Page assembled:',len(r),'passages;',len(DESIGN.split()),'design words;',len(html.encode()),'HTML bytes')
+ return payload
+
+if __name__=='__main__':
+ rows,meta=extract()
+ # BEGIN TWO_SECTION_FILTER
+ TARGET_SECTIONS = {
+     "Majors (listed in alphabetical order)",
+     "Course Descriptions",
+     "Degree Requirements",
+     "Common Core Courses",
+     "Registration",
+     "Grading and Grade Requirements"
+ }
+ rows = [
+     r for r in rows
+     if r.get("section", "").strip() in TARGET_SECTIONS
+ ]
+ if not rows:
+     raise RuntimeError("No passages matched target sections")
+ meta["cleaned_passages"] = len(rows)
+ meta["formal_sections"] = len(set(r["section"] for r in rows))
+ print("FILTERED:", len(rows), "passages")
+ print("SECTIONS:", sorted(set(r["section"] for r in rows)))
+ # END TWO_SECTION_FILTER
+
+
+ cache=OUT/'minilm_embeddings.npy'
+ fingerprint=hashlib.sha256(json.dumps([r['text'] for r in rows]).encode()).hexdigest()
+ stamp=OUT/'embedding_input_sha256.txt'
+ if cache.exists() and stamp.exists() and stamp.read_text()==fingerprint:
+  emb=np.load(cache)
+ elif cache.exists() and (OUT/'analysis.json').exists():
+  prior=json.loads((OUT/'analysis.json').read_text())['passages'];old=np.load(cache);lookup={r['text']:old[i] for i,r in enumerate(prior)} if len(old)==len(prior) else {}
+  emb=np.array([lookup[r['text']] for r in rows]) if all(r['text'] in lookup for r in rows) else embed(rows)
+  np.save(cache,emb)
+ else:emb=embed(rows)
+ stamp.write_text(fingerprint)
+ analyze(rows,meta,emb)
+
+ assemble()
