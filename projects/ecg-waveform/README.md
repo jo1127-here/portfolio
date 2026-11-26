@@ -34,3 +34,5 @@ The notebook also reports a legacy comparison cohort with 176 records for P and 
 4. Change `example_record_id` to inspect the manual and predicted peaks for any record.
 
 See PhysioNet for dataset documentation, attribution and licensing. [LUDB v1.0.1](https://physionet.org/content/ludb/1.0.1/)
+
+The portfolio cover and ECG viewer use a three-second Lead II excerpt from public LUDB v1.0.1 record 1, with the dataset’s manual peak annotations. The site includes the plotted samples and annotation offsets only. [PhysioNet LUDB and Open Data Commons Attribution License](https://physionet.org/content/ludb/1.0.1/)
