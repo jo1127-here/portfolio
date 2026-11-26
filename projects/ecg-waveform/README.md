@@ -39,4 +39,4 @@ A single-record comparison shows clinician annotations and detector output, with
 
 See PhysioNet for dataset documentation, attribution and licensing. [LUDB v1.0.1](https://physionet.org/content/ludb/1.0.1/)
 
-The portfolio cover shows a preprocessed public LUDB Lead II excerpt with automatic peak annotations from my detector. [PhysioNet LUDB and Open Data Commons Attribution License](https://physionet.org/content/ludb/1.0.1/)
+The ECG project shows a preprocessed public LUDB Lead II excerpt with automatic peak annotations from my detector. [PhysioNet LUDB and Open Data Commons Attribution License](https://physionet.org/content/ludb/1.0.1/)

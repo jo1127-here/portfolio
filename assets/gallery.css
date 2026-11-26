@@ -74,3 +74,20 @@ dialog button,dialog select{background:#f8faff}
 .intro-bio p+p{margin-top:.9rem}
 
 .collection-title{font-size:1.12rem;margin:22px 0 10px;color:var(--ink)}
+
+.cover-mascot{position:relative;display:grid;place-items:center;isolation:isolate;min-height:clamp(260px,35vw,390px);overflow:hidden;border:1px solid #e3d8f5;border-radius:32px;background:radial-gradient(ellipse at 49% 40%,#fffaff 0%,#f2ebfc 64%,#e8e4fb 100%)}
+.mascot-cat{position:relative;width:220px;height:222px;filter:drop-shadow(0 10px 10px #6a4c8e21)}
+.mascot-head{position:absolute;top:33px;left:22px;width:158px;height:122px}
+.mascot-ear{position:absolute;top:-18px;width:59px;height:66px;border:3px solid #7760a2;background:#cfbef4;border-radius:12px 45px 10px 36px;transform:rotate(-12deg)}
+.mascot-ear::after{content:"";position:absolute;inset:12px 12px 10px 10px;border-radius:inherit;background:#f3d1e8}
+.mascot-ear-left{left:3px}
+.mascot-ear-right{right:3px;transform:scaleX(-1) rotate(-12deg)}
+.mascot-face{position:absolute;inset:0;background:#d8c9fa;border:3px solid #7760a2;border-radius:48% 48% 44% 44%}
+.mascot-eyes{position:absolute;top:47px;left:43px;width:10px;height:13px;border-radius:50%;background:#47365e;box-shadow:53px 0 #47365e}
+.mascot-nose{position:absolute;top:65px;left:70px;width:12px;height:7px;border-radius:50% 50% 60% 60%;background:#885883}
+.mascot-blush{position:absolute;top:69px;left:26px;width:19px;height:9px;border-radius:50%;background:#edb6d7;box-shadow:82px 0 #edb6d7}
+.mascot-body{position:absolute;left:46px;bottom:11px;width:113px;height:101px;border:3px solid #7760a2;border-radius:55% 55% 40% 40%;background:#cfbef4}
+.mascot-paw{position:absolute;right:16px;bottom:57px;width:45px;height:73px;transform:rotate(27deg);border:3px solid #7760a2;border-radius:50% 50% 43% 43%;background:#d8c9fa}
+.mascot-sparkle{position:absolute;color:#9270bd;font-size:2.15rem;line-height:1}
+.mascot-sparkle-left{top:31%;left:19%}
+.mascot-sparkle-right{top:21%;right:17%;color:#ae72ad}
