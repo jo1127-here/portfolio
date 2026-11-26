@@ -72,3 +72,5 @@ dialog button,dialog select{background:#f8faff}
 
 .intro-bio{max-width:44ch;font-size:clamp(1.125rem,1rem + .4vw,1.3rem);line-height:1.55}
 .intro-bio p+p{margin-top:.9rem}
+
+.collection-title{font-size:1.12rem;margin:22px 0 10px;color:var(--ink)}

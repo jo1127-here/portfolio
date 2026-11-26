@@ -12,7 +12,7 @@
 <style>
 .effect-chart{display:grid;gap:8px}.effect-chart h4{margin:0;color:var(--ink)}.effect-row{display:grid;grid-template-columns:minmax(100px,1fr) minmax(65px,1fr) 3.55rem;gap:8px;align-items:center;font: .82rem/1.3 ui-monospace,monospace}.effect-track{position:relative;height:9px;border-radius:5px;background:linear-gradient(90deg,#263548 49.5%,#aab9cb 49.5% 50.5%,#263548 50.5%)}.effect-track i{position:absolute;top:1px;height:7px;background:var(--mint);border-radius:4px}.effect-track i.negative{background:var(--pink)}.effect-scale{display:flex;justify-content:space-between;margin:0 3.7rem 0 auto;width:calc(50% - 1.85rem);font:.75rem ui-monospace,monospace;color:var(--muted)}.effect-chart details+details{margin-top:6px}.effect-chart summary{margin-bottom:8px}
 </style>
-<link rel="stylesheet" href="assets/gallery.css?v=project-type">
+<link rel="stylesheet" href="assets/gallery.css?v=labs">
 </head>
 <body>
 <nav aria-label="Main navigation"><a class="name" href="#top">Jo.</a><div><a href="#portfolio">Portfolio</a><a href="https://github.com/jo1127-here">GitHub</a></div></nav>
@@ -41,10 +41,22 @@
 <div class="tile-copy"><p class="eyebrow">Medical imaging</p><h3>PET/CT spatial alignment</h3><p>Aligned PET/CT scans and compared lesion predictions with clinician masks.</p></div>
 </a>
 </div></section>
-<section class="project-group" id="modeling"><h3>Beyond Healthcare</h3><p>I bring the same approach to text and financial data: make model outputs easy to explore and explain what the results tell us. In STATS 401, I built a searchable map of a university bulletin. In STATS 302, I compared estimates of factors associated with S&amp;P 500 returns.</p><div class="project-grid"><a class="project-tile" href="#lab" data-project="lab">
+<section class="project-group" id="modeling"><h3>Beyond Healthcare</h3><p>I use interactive visualization to explore patterns in text, networks, and geography. I also use statistical models to study financial time series.</p>
+<h4 class="collection-title">STATS 401 · Interactive Visualization</h4>
+<div class="project-grid"><a class="project-tile" href="#lab" data-project="lab">
 <img src="assets/lab.webp" alt="UMAP plot of bulletin passages colored by topic" width="900" height="517">
-<div class="tile-copy"><p class="eyebrow">Visual analytics</p><h3>Mapping a university bulletin</h3><p>Turned a university bulletin into an interactive map of related passages.</p></div>
+<div class="tile-copy"><p class="eyebrow">Lab 8 · Text</p><h3>Mapping a university bulletin</h3><p>Turned a university bulletin into an interactive map of related passages.</p></div>
 </a>
+<a class="project-tile" href="projects/stats401-lab7/lab7/index.html">
+<img src="assets/lab7-network.webp" alt="Daily commercial transactions shown as a network of companies" width="900" height="517">
+<div class="tile-copy"><p class="eyebrow">Lab 7 · Networks</p><h3>Temporal commercial network</h3><p>Built a time slider and playback to explore 60 days of company transactions.</p></div>
+</a>
+<a class="project-tile" href="projects/stats401-lab9/lab9/index.html">
+<img src="assets/lab9-map.webp" alt="World choropleth of GDP across the included economies" width="900" height="517">
+<div class="tile-copy"><p class="eyebrow">Lab 9 · Geography</p><h3>Mapping the global economy</h3><p>Built a linked map and cartogram to compare GDP across 50 economies.</p></div>
+</a></div>
+<h4 class="collection-title">STATS 302 · Statistical Modeling</h4>
+<div class="project-grid">
 <a class="project-tile" href="#markets" data-project="markets">
 <img src="assets/markets.webp" alt="Bar chart of selected Graphical RICA coefficients" width="900" height="517">
 <div class="tile-copy"><p class="eyebrow">Financial time series</p><h3>Modeling S&P 500 returns</h3><p>Modeled how market factors relate to S&amp;P 500 returns.</p></div>
@@ -83,7 +95,7 @@
 <div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/pet-ct">GitHub project</a></div>
 <div class="related-project"><a href="#waveform">Explore another biomedical workflow</a></div></article></dialog>
 <dialog id="lab" aria-label="Mapping a university bulletin"><form method="dialog" class="dialog-bar"><button>Close project</button></form><article class="card detail-card">
-<div><p class="eyebrow">Interactive visualization · STATS 401</p><h2>Mapping a university bulletin</h2><dl class="project-method"><dt>Aim</dt><dd>Help readers explore how topics are organized across a university bulletin.</dd><dt>Method</dt><dd>Embedded passages with MiniLM, grouped them with K-means, and projected them with UMAP for an interactive, filterable map.</dd></dl><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/stats401-lab8">GitHub project</a><a href="projects/stats401-lab8/lab8/index.html">Explore full lab</a></div></div>
+<div><p class="eyebrow">Interactive visualization · STATS 401</p><h2>Mapping a university bulletin</h2><dl class="project-method"><dt>Aim</dt><dd>Help readers explore how topics are organized across a university bulletin.</dd><dt>Method</dt><dd>Embedded passages with MiniLM, grouped them with K-means, and projected them with UMAP for an interactive, filterable map.</dd></dl><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/stats401-lab8">GitHub project</a><a href="projects/stats401-lab8/lab8/index.html">Open full interactive Lab 8</a></div></div>
 <h3 class="output-title">Output</h3>
 <div class="plot"><div class="controls"><label for="topic">Topic</label><select id="topic"><option value="all">All topics</option></select></div><canvas id="umap" role="img" aria-label="UMAP projection of bulletin passages colored by cluster"></canvas><output id="topic-info"></output><p class="caption">Each point represents one passage. Coordinates come from the published Lab 8 visualization.</p></div>
 <div class="related-project"><a href="#markets">Explore model estimates on market data</a></div></article></dialog>
