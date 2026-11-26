@@ -26,6 +26,10 @@ Removing the extra distance-to-R post-filter increased P-wave F1 from **59.39%**
 
 The notebook also reports a legacy comparison cohort with 176 records for P and 199 for R and T. The full-cohort table above gives the primary result.
 
+## Record 11 example
+
+The separate Trail7 + reproduction2 evaluation on Lead II of Record 11 matched 22 manual peaks within ±75 ms (7 P, 8 R, 7 T), with zero false positives and zero missed peaks. The 200-record summary above is for the intermediate detector using a ±76 ms matching tolerance.
+
 ## Run the notebook
 
 1. Install the dependencies with `python -m pip install -r requirements.txt`.

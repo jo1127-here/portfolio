@@ -52,8 +52,17 @@
 <dialog id="waveform" aria-label="ECG waveform detection"><form method="dialog" class="dialog-bar"><button>Close project</button></form><article class="card detail-card">
 <p class="eyebrow">Signal processing</p><h3>ECG waveform detection</h3><p>Extracted P, R, and T peaks from Lead II and evaluated an intermediate detector against manual annotations on 200 LUDB records.</p><div class="tags"><span>Notch + Butterworth</span><span>Engzee + energy fallback</span><span>R-anchored peak search</span></div>
 <div class="plot"><div class="controls"><label><input id="markers" type="checkbox" checked> Show manual P/R/T annotations</label></div><canvas id="wave" role="img" aria-label="Public Lead II ECG excerpt with manual P, R and T annotations"></canvas><p class="caption">Public LUDB v1.0.1, record 1, Lead II. Markers show manual annotations. <a href="https://physionet.org/content/ludb/1.0.1/">Source and license</a>.</p></div>
-<div class="metrics"><div><strong>88.72%</strong><small>P-wave F1</small></div><div><strong>98.55%</strong><small>R-wave F1</small></div><div><strong>92.72%</strong><small>T-wave F1</small></div></div>
-<p class="caption">Intermediate detector · 76 ms matching tolerance.</p><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/ecg-waveform">GitHub project</a></div>
+<section class="related-project" aria-labelledby="ecg-cohort">
+<h4 id="ecg-cohort">Full LUDB evaluation · 200 records</h4>
+<p>Lead II from every record in LUDB v1.0.1 was evaluated with the intermediate detector. Predicted P, R and T peaks were matched one-to-one to manual annotations within ±76 ms.</p>
+<table><thead><tr><th scope="col">Peak</th><th scope="col">TP</th><th scope="col">FP</th><th scope="col">FN</th><th scope="col">F1</th></tr></thead>
+<tbody><tr><th scope="row">P</th><td>1,337</td><td>276</td><td>64</td><td>88.72%</td></tr><tr><th scope="row">R</th><td>1,801</td><td>23</td><td>30</td><td>98.55%</td></tr><tr><th scope="row">T</th><td>1,509</td><td>104</td><td>133</td><td>92.72%</td></tr></tbody></table>
+</section>
+<section class="related-project" aria-labelledby="ecg-example">
+<h4 id="ecg-example">Record 11 · Single-record example</h4>
+<p>The Trail7 detector with reproduction2 preprocessing matched 22 annotated peaks (7 P, 8 R, 7 T) within ±75 ms, with zero false positives and zero missed peaks in this record.</p>
+</section>
+<div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/ecg-waveform">GitHub project</a></div>
 <div class="related-project"><a href="#ecg-icd">See how T-wave features are used in association models</a></div></article></dialog>
 <dialog id="pet-ct" aria-label="PET/CT spatial alignment"><form method="dialog" class="dialog-bar"><button>Close project</button></form><article class="card detail-card">
 <p class="eyebrow">Medical imaging</p><h3>PET/CT spatial alignment</h3><p>Resampled CT and lesion masks onto the PET grid in a shared physical frame, checked image geometry, and selected the axial slice with the largest mask area.</p><div class="tags"><span>SimpleITK</span><span>Linear CT interpolation</span><span>Nearest-neighbor masks</span></div>
