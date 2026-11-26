@@ -20,7 +20,7 @@ header.cover{max-width:none;padding:clamp(38px,7vw,95px) 0 clamp(45px,7vw,80px);
 .project-tile img{display:block;width:100%;height:auto;aspect-ratio:1.74;object-fit:cover}
 .tile-copy{padding:15px 17px 18px}
 .tile-copy h3{font:1.42rem/1.1 Georgia,serif;margin:.32em 0;letter-spacing:-.02em}
-.tile-copy>p:last-child{font-size:.88rem}
+.tile-copy>p:last-child{font-size:1.125rem;line-height:1.45;overflow-wrap:anywhere}
 .tile-copy .eyebrow{font-size:.76rem;letter-spacing:.07em}
 dialog{width:min(840px,calc(100% - 24px));max-height:calc(100dvh - 24px);margin:auto;background:var(--panel);color:var(--ink);border:1px solid var(--edge);border-radius:14px;padding:0}
 body:has(dialog[open]){overflow:hidden}
@@ -29,12 +29,12 @@ dialog .detail-card{border:0;padding-top:10px}
 dialog .plot{margin-top:16px}
 dialog .caption{min-height:0}
 @media(max-width:825px){.project-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cover h1{font-size:clamp(3.8rem,10vw,6.5rem)}}
-@media(max-width:570px){nav,main,footer{width:calc(100% - 30px)}header.cover{grid-template-columns:1fr;gap:24px}.project-grid{gap:10px}.tile-copy{padding:10px}.tile-copy h3{font-size:1.12rem}.tile-copy>p:last-child{font-size:.8rem}}
+@media(max-width:570px){nav,main,footer{width:calc(100% - 30px)}header.cover{grid-template-columns:1fr;gap:24px}.project-grid{gap:10px}.tile-copy{padding:10px}.tile-copy h3{font-size:1.12rem}.tile-copy>p:last-child{font-size:1rem}}
 @media(prefers-reduced-motion:reduce){.project-tile{transition:none}}
 
 .project-group{margin:20px 0 34px;scroll-margin-top:20px}
 .project-group>h3{font:1.45rem/1.2 Georgia,serif;margin:0 0 5px}
-.project-group>p{margin-bottom:14px;max-width:68ch}
+.project-group>p{margin-bottom:14px;max-width:68ch;font-size:1.125rem}
 .cover figure{background:#e4ede7;color:var(--ink);border:1px solid var(--edge)}
 .cover figcaption,.cover figcaption a{color:var(--ink)}
 dialog::backdrop{background:#23312e66}
