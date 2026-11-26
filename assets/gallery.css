@@ -49,3 +49,23 @@ dialog .effect-track i.negative{background:#a63729}
 .ecg-figure{margin:8px 0 20px}
 .ecg-figure img{display:block;width:100%;height:auto;border:1px solid var(--edge);border-radius:8px}
 .ecg-figure figcaption{margin-top:7px;color:var(--muted);font-size:.92rem}
+
+:root{--bg:#f6f8fd;--panel:#ffffff;--edge:#d7ddec;--ink:#253244;--muted:#4e5c73;--mint:#324b86;--blue:#624293}
+[hidden]{display:none!important}
+header.cover{min-height:65vh}
+.cover h1{font-size:clamp(3.65rem,8vw,7.2rem);letter-spacing:-.075em}
+.cover h1 em{color:#624293}
+.hello-mark{display:inline-grid;place-items:center;width:2.4rem;height:2.4rem;border-radius:50%;background:#efe7fb;color:#624293;font-size:1.6rem}
+.cover figure{background:#e9eef9;box-shadow:0 12px 30px #25324410}
+.cover figcaption{padding:12px 16px}
+.cover-link{border-radius:99px;background:#324b86;color:white;text-decoration:none;padding:10px 20px}
+.gallery{padding-top:24px;border-top:0}
+.portfolio-home{display:inline-block;margin-bottom:14px;font-weight:650}
+.project-method{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:10px 16px;margin:16px 0}
+.project-method dt{font-weight:750;color:#324b86}
+.project-method dd{margin:0;color:var(--muted)}
+dialog .output-title{font-size:1.4rem;margin:24px 0 8px}
+dialog .plot,.result-note{background:#f2f5fc}
+.result-note{border:1px solid var(--edge);border-radius:8px;padding:14px}
+.result-note p+p{margin-top:8px}
+dialog button,dialog select{background:#f8faff}

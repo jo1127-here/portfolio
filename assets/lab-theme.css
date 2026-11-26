@@ -1,11 +1,11 @@
 :root{color-scheme:light}
-body{background:#f7f2e9;color:#162e38;font:16px/1.55 system-ui,sans-serif}
-header{background:#fffcf6;border-color:#d8cab8}
+body{background:#f6f8fd;color:#162e38;font:16px/1.55 system-ui,sans-serif}
+header{background:#ffffff;border-color:#d7ddec}
 header h1,main h2,main h3{font-family:Georgia,serif;font-weight:400;color:#162e38}
 header h1{font-size:clamp(2rem,5vw,3.6rem);line-height:1.08;margin:12px 0 8px}
 .portfolio-return{font-size:.9rem;font-weight:650}
-a,.link-button{color:#16655b;text-underline-offset:3px}
-main .card{background:#fffcf6;border:1px solid #d8cab8;border-radius:12px}
+a,.link-button{color:#324b86;text-underline-offset:3px}
+main .card{background:#ffffff;border:1px solid #d7ddec;border-radius:12px}
 .muted{color:#4f6264}
-input,select,button{color:#162e38;background:#fffdf8;border-color:#a89d8e}
+input,select,button{color:#162e38;background:#f8faff;border-color:#a89d8e}
 :focus-visible{outline:2px solid #a63729;outline-offset:3px}

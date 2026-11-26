@@ -15,4 +15,6 @@ python pet_ct_alignment.py /path/to/imaging-root
 
 The input directory should have `CT`, `PET`, and `SEG` subdirectories, each containing the same case folder name. The expected filenames are `body_ct.nii.gz`, `body_suv.nii.gz`, and `body_seg.nii.gz`, respectively. The script selects the first case available across all three modalities.
 
-An interactive synthetic example is available in the [portfolio](https://github.com/jo1127-here/portfolio/blob/main/index.html).
+## Segmentation evaluation
+
+I ran nnU-Net and compared its lesion masks with clinician ground truth. The reported positive mean Dice was **61.69%**. This repository contains the PET/CT spatial alignment workflow. My nnU-Net training and inference code is not published here.

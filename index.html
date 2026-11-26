@@ -12,45 +12,47 @@
 <style>
 .effect-chart{display:grid;gap:8px}.effect-chart h4{margin:0;color:var(--ink)}.effect-row{display:grid;grid-template-columns:minmax(100px,1fr) minmax(65px,1fr) 3.55rem;gap:8px;align-items:center;font: .82rem/1.3 ui-monospace,monospace}.effect-track{position:relative;height:9px;border-radius:5px;background:linear-gradient(90deg,#263548 49.5%,#aab9cb 49.5% 50.5%,#263548 50.5%)}.effect-track i{position:absolute;top:1px;height:7px;background:var(--mint);border-radius:4px}.effect-track i.negative{background:var(--pink)}.effect-scale{display:flex;justify-content:space-between;margin:0 3.7rem 0 auto;width:calc(50% - 1.85rem);font:.75rem ui-monospace,monospace;color:var(--muted)}.effect-chart details+details{margin-top:6px}.effect-chart summary{margin-bottom:8px}
 </style>
-<link rel="stylesheet" href="assets/gallery.css?v=ecg">
+<link rel="stylesheet" href="assets/gallery.css?v=jo">
 </head>
 <body>
-<nav aria-label="Main navigation"><a class="name" href="#top">Yuxuan Zhou</a><div><a href="#biomedical">Biomedical</a><a href="#modeling">Modeling</a><a href="https://github.com/jo1127-here">GitHub</a></div></nav>
+<nav aria-label="Main navigation"><a class="name" href="#top">Jo.</a><div><a href="#portfolio">Portfolio</a><a href="https://github.com/jo1127-here">GitHub</a></div></nav>
 <main id="top">
-<header class="cover">
-<div><p class="eyebrow">Yuxuan Zhou · Portfolio</p><h1>Data in<br><em>focus.</em></h1><p class="lede">I build visual tools for reading signals, checking models, and exploring patterns in data.</p><a class="cover-link" href="#projects">Browse projects</a></div>
-<figure><img src="assets/cover.webp?v=ecg" width="1125" height="645" alt="Public LUDB Lead II ECG excerpt with P, R and T markers"><figcaption>Lead II excerpt with manual peak annotations · <a href="https://physionet.org/content/ludb/1.0.1/">PhysioNet LUDB</a></figcaption></figure>
+<header class="cover" id="intro">
+<div><span class="hello-mark" aria-hidden="true">✿</span><h1>Hi, I’m <em>Jo.</em></h1><p class="lede">I work with biomedical signals, medical images, and interactive data visualization.</p><a class="cover-link" href="#portfolio">View portfolio</a></div>
+<figure><img src="assets/processed-ecg-cover.webp" width="1282" height="383" alt="Preprocessed Lead II ECG with peaks marked by Jo’s detector"><figcaption>From my ECG project · preprocessed Lead II with automated peak annotations</figcaption></figure>
 </header>
-<section class="gallery" aria-labelledby="projects">
+<section class="gallery" id="portfolio" aria-labelledby="projects" hidden><a class="portfolio-home" href="#top">Back to home</a>
 <h2 id="projects">Selected projects</h2>
 <section class="project-group" id="biomedical"><h3>Biomedical data</h3><p>From finding peaks in ECG to testing clinical associations and aligning medical images.</p><div class="project-grid"><a class="project-tile" href="#ecg-icd" data-project="ecg-icd">
 <img src="assets/forest.webp" alt="Forest plot of aggregate ECG–ICD effect estimates" width="900" height="517">
-<div class="tile-copy"><p class="eyebrow">Clinical statistics</p><h3>ECG–ICD association analysis</h3><p>Mixed-effects models · BH-FDR</p></div>
+<div class="tile-copy"><p class="eyebrow">Clinical statistics</p><h3>ECG–ICD association analysis</h3><p>Tested how ECG features vary with recorded diagnoses.</p></div>
 </a>
 <a class="project-tile" href="#waveform" data-project="waveform">
 <img src="assets/wave.webp?v=ecg" alt="Annotated waveform from a public LUDB recording" width="900" height="517">
-<div class="tile-copy"><p class="eyebrow">Signal processing</p><h3>ECG waveform detection</h3><p>Lead II · P/R/T delineation</p></div>
+<div class="tile-copy"><p class="eyebrow">Signal processing</p><h3>ECG waveform detection</h3><p>Automatically annotated P, R, and T peaks in ECG signals.</p></div>
 </a>
 <a class="project-tile" href="#pet-ct" data-project="pet-ct">
 <img src="assets/pet.webp" alt="Workflow diagram showing CT and segmentation resampled to the PET grid" width="900" height="517">
-<div class="tile-copy"><p class="eyebrow">Medical imaging</p><h3>PET/CT spatial alignment</h3><p>SimpleITK · PET-grid resampling</p></div>
+<div class="tile-copy"><p class="eyebrow">Medical imaging</p><h3>PET/CT spatial alignment</h3><p>Aligned PET/CT scans and compared lesion predictions with clinician masks.</p></div>
 </a>
 </div></section>
 <section class="project-group" id="modeling"><h3>Text &amp; market data</h3><p>Two ways to inspect model output: map similar passages and compare estimates of market drivers.</p><div class="project-grid"><a class="project-tile" href="#lab" data-project="lab">
 <img src="assets/lab.webp" alt="UMAP plot of bulletin passages colored by topic" width="900" height="517">
-<div class="tile-copy"><p class="eyebrow">Visual analytics</p><h3>Mapping a university bulletin</h3><p>MiniLM · UMAP · D3.js</p></div>
+<div class="tile-copy"><p class="eyebrow">Visual analytics</p><h3>Mapping a university bulletin</h3><p>Turned a university bulletin into an interactive map of related passages.</p></div>
 </a>
 <a class="project-tile" href="#markets" data-project="markets">
 <img src="assets/markets.webp" alt="Bar chart of selected Graphical RICA coefficients" width="900" height="517">
-<div class="tile-copy"><p class="eyebrow">Financial time series</p><h3>Modeling S&P 500 returns</h3><p>Lagged DAG · Graphical RICA</p></div>
+<div class="tile-copy"><p class="eyebrow">Financial time series</p><h3>Modeling S&P 500 returns</h3><p>Modeled how market factors relate to S&amp;P 500 returns.</p></div>
 </a></div></section>
 </section>
 <dialog id="ecg-icd" aria-label="ECG–ICD association analysis"><form method="dialog" class="dialog-bar"><button>Close project</button></form><article class="card detail-card">
-<div><p class="eyebrow">Clinical statistics</p><h2>ECG–ICD association analysis</h2><p>Estimated associations between standardized T-wave peak amplitude and ICD-9 diagnosis history, accounting for repeated ECGs per patient.</p><div class="tags"><span>Patient random intercepts</span><span>Linear mixed models</span><span>BH-FDR</span><span>95% CI</span></div><p id="forest-summary" class="caption"></p><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/ecg-icd">GitHub project</a></div></div>
+<div><p class="eyebrow">Clinical statistics</p><h2>ECG–ICD association analysis</h2><dl class="project-method"><dt>Aim</dt><dd>Test which ICD-9 diagnoses are associated with standardized T-wave amplitude.</dd><dt>Method</dt><dd>Fit linear mixed-effects models with patient random intercepts for repeated ECGs, then applied BH-FDR correction.</dd></dl><p id="forest-summary" class="caption"></p><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/ecg-icd">GitHub project</a></div></div>
+<h3 class="output-title">Output</h3>
 <div class="plot"><div class="controls"><label for="forest-filter">Display</label><select id="forest-filter"><option value="all">Top 10 by absolute effect</option><option value="fdr">BH-FDR q &lt; 0.05</option></select></div><canvas id="forest" role="img" aria-label="Forest plot of standardized coefficients and 95 percent confidence intervals"></canvas><output id="forest-info">Hover over a row for its estimate and adjusted q-value.</output><details><summary>Read estimates as a table</summary><table><thead><tr><th>ICD-9</th><th>Estimate</th><th>95% CI</th><th>q</th></tr></thead><tbody id="forest-table"></tbody></table></details></div>
 <div class="related-project"><a href="#waveform">See how P and T peaks are located</a></div></article></dialog>
 <dialog id="waveform" aria-label="ECG waveform detection"><form method="dialog" class="dialog-bar"><button>Close project</button></form><article class="card detail-card">
-<p class="eyebrow">Signal processing</p><h3>ECG waveform detection</h3><p>Extracted P, R, and T peaks from Lead II and evaluated an intermediate detector against manual annotations on 200 LUDB records.</p><div class="tags"><span>Notch + Butterworth</span><span>Engzee + energy fallback</span><span>R-anchored peak search</span></div>
+<p class="eyebrow">Signal processing</p><h3>ECG waveform detection</h3><dl class="project-method"><dt>Aim</dt><dd>Automatically locate P, R, and T peaks and evaluate detection against clinician annotations.</dd><dt>Method</dt><dd>Filtered Lead II recordings, found R peaks with Engzee and an energy-based fallback, then searched for P and T peaks in R-anchored windows.</dd></dl>
+<h3 class="output-title">Output</h3>
 <section aria-labelledby="ecg-example">
 <h4 id="ecg-example">Clinician annotations vs. my detector</h4>
 <figure class="ecg-figure"><a href="assets/ecg-detection-comparison.webp"><img src="assets/ecg-detection-comparison.webp" alt="Lead II ECG with clinician annotations above, detector output below, and matching counts"></a>
@@ -68,16 +70,21 @@
 <div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/ecg-waveform">GitHub project</a></div>
 <div class="related-project"><a href="#ecg-icd">See how T-wave features are used in association models</a></div></article></dialog>
 <dialog id="pet-ct" aria-label="PET/CT spatial alignment"><form method="dialog" class="dialog-bar"><button>Close project</button></form><article class="card detail-card">
-<p class="eyebrow">Medical imaging</p><h3>PET/CT spatial alignment</h3><p>Resampled CT and lesion masks onto the PET grid in a shared physical frame, checked image geometry, and selected the axial slice with the largest mask area.</p><div class="tags"><span>SimpleITK</span><span>Linear CT interpolation</span><span>Nearest-neighbor masks</span></div>
-<div class="plot"><div class="controls"><label for="mode">Layer</label><select id="mode"><option value="fusion">Fusion</option><option value="ct">CT</option><option value="pet">PET</option><option value="mask">CT + mask</option></select><label for="opacity">PET blend</label><input id="opacity" type="range" min="0" max="100" value="72"></div><canvas id="pet" role="img" aria-label="Synthetic axial imaging phantom with selectable CT, PET, mask and fusion layers"></canvas><p class="caption">Synthetic axial phantom illustrating the overlay workflow.</p></div>
+<p class="eyebrow">Medical imaging</p><h3>PET/CT spatial alignment</h3><dl class="project-method"><dt>Aim</dt><dd>Align PET, CT, and lesion masks and compare lesion predictions with clinician ground truth.</dd><dt>Method</dt><dd>Resampled CT and lesion masks onto the PET grid with SimpleITK using linear and nearest-neighbor interpolation, respectively. I ran nnU-Net for lesion segmentation and compared predictions with clinician masks.</dd></dl>
+<h3 class="output-title">Output</h3>
+<div class="result-note"><p><strong>Alignment check.</strong> In the example output, the CT and lesion masks matched the PET grid. The lesion mask had 1,299 nonzero voxels before and after resampling.</p>
+<p><strong>61.69%</strong> positive mean Dice, as reported in my nnU-Net evaluation. This metric summarizes the evaluation, while a mask overlay shows an individual example.</p>
+<p>The linked GitHub project contains the spatial alignment code. My nnU-Net training and inference code is not published there.</p></div>
 <div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/pet-ct">GitHub project</a></div>
 <div class="related-project"><a href="#waveform">Explore another biomedical workflow</a></div></article></dialog>
 <dialog id="lab" aria-label="Mapping a university bulletin"><form method="dialog" class="dialog-bar"><button>Close project</button></form><article class="card detail-card">
-<div><p class="eyebrow">Interactive visualization · STATS 401</p><h2>Mapping a university bulletin</h2><p>Published Lab 8 explores related passages in the Duke Kunshan University undergraduate bulletin. Select a topic to see where its passages land in the two-dimensional projection.</p><div class="tags"><span>MiniLM embeddings</span><span>UMAP</span><span>K-means</span><span>TF-IDF</span><span>D3.js in the full lab</span></div><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/stats401-lab8">GitHub project</a><a href="projects/stats401-lab8/lab8/index.html">Explore full lab</a></div></div>
+<div><p class="eyebrow">Interactive visualization · STATS 401</p><h2>Mapping a university bulletin</h2><dl class="project-method"><dt>Aim</dt><dd>Help readers explore how topics are organized across a university bulletin.</dd><dt>Method</dt><dd>Embedded passages with MiniLM, grouped them with K-means, and projected them with UMAP for an interactive, filterable map.</dd></dl><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/stats401-lab8">GitHub project</a><a href="projects/stats401-lab8/lab8/index.html">Explore full lab</a></div></div>
+<h3 class="output-title">Output</h3>
 <div class="plot"><div class="controls"><label for="topic">Topic</label><select id="topic"><option value="all">All topics</option></select></div><canvas id="umap" role="img" aria-label="UMAP projection of bulletin passages colored by cluster"></canvas><output id="topic-info"></output><p class="caption">Each point represents one passage. Coordinates come from the published Lab 8 visualization.</p></div>
 <div class="related-project"><a href="#markets">Explore model estimates on market data</a></div></article></dialog>
 <dialog id="markets" aria-label="Modeling S&P 500 returns"><form method="dialog" class="dialog-bar"><button>Close project</button></form><article class="card detail-card">
-<div><p class="eyebrow">Financial time series · STATS 302</p><h2>Modeling S&amp;P 500 returns</h2><p>Engineered lagged market features from Yahoo Finance and used a sector-level causal graph to explore potential drivers of index returns.</p><div class="tags"><span>PCA</span><span>Lagged DAG</span><span>FastICA</span><span>Graphical RICA</span><span>Cross-moment estimation</span></div><p class="caption">The unknown-graph check did not identify the full graph. The coefficients are exploratory and depend on the model assumptions.</p><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/stats302">GitHub project</a></div></div>
+<div><p class="eyebrow">Financial time series · STATS 302</p><h2>Modeling S&amp;P 500 returns</h2><dl class="project-method"><dt>Aim</dt><dd>Explore which market factors are associated with movements in S&amp;P 500 returns.</dd><dt>Method</dt><dd>Built market features from Yahoo Finance and compared Graphical RICA and cross-moment estimates using a lagged sector-level causal graph.</dd></dl><p class="caption">The unknown-graph check did not identify the full graph. The coefficients are exploratory and depend on the model assumptions.</p><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/stats302">GitHub project</a></div></div>
+<h3 class="output-title">Output</h3>
 <div class="plot effect-chart"><h4>Selected coefficient estimates</h4><details open><summary>Graphical RICA · lagged inputs</summary><div class="effect-row"><span>10Y yield</span><span class="effect-track" aria-hidden="true"><i class="positive" style="left:50.00%;width:49.31%"></i></span><span>+0.986</span></div>
 <div class="effect-row"><span>13-week yield</span><span class="effect-track" aria-hidden="true"><i class="positive" style="left:50.00%;width:49.13%"></i></span><span>+0.983</span></div>
 <div class="effect-row"><span>VIX</span><span class="effect-track" aria-hidden="true"><i class="positive" style="left:50.00%;width:47.80%"></i></span><span>+0.956</span></div>
@@ -146,34 +153,6 @@ byId('forest').addEventListener('pointermove',e=>{
 });
 byId('forest').addEventListener('pointerleave',()=>{byId('forest-info').textContent='* BH-FDR q < 0.05 · Hover for model details.';});
 byId('forest-summary').textContent=forest[0].patients+' patients · '+forest[0].ecgs.toLocaleString('en-US')+' ECGs in the screening cohort. Exploratory associations.';
-const gauss=(x,s)=>Math.exp(-.5*(x/s)**2);
-function drawPET(){
-  const {ctx,width:w,height:h}=surface('pet');
-  const src=document.createElement('canvas');src.width=360;src.height=220;
-  const sc=src.getContext('2d'),im=sc.createImageData(360,220);
-  const mode=byId('mode').value, alpha=Number(byId('opacity').value)/100;
-  byId('opacity').disabled=mode!=='fusion';
-  for(let j=0;j<220;j++)for(let i=0;i<360;i++){
-    const x=(i-180)/150,y=(j-110)/97, body=Math.hypot(x,y);
-    const lung=Math.min(Math.hypot((x+.42)/.28,(y+.07)/.65),Math.hypot((x-.42)/.28,(y+.07)/.65));
-    const lesion=Math.hypot((x-.46)/.10,(y+.20)/.13);
-    const bone=gauss(Math.hypot(x/.62,(y-.11)/.55)-1,.038)*.55+gauss(Math.hypot(x/.13,(y-.57)/.14),.61)*.64;
-    const noise=(Math.sin(i*123.57+j*62.73)*.5+.5)*.035;
-    const gray=body<1?Math.min(1,(lung<1?.10:.52)+bone+noise+(body>.965?.18:0)):.028;
-    const uptake=Math.min(1,gauss(lesion,.85)+.38*gauss(Math.hypot((x+.08)/.28,y/.37),.57));
-    const heat=[Math.min(1,uptake*2.4),Math.min(1,Math.max(0,uptake-.22)*1.45),uptake*.56];
-    const edge=lesion>.88&&lesion<1.02;
-    const idx=(j*360+i)*4;
-    for(let c=0;c<3;c++){
-      const mask=mode==='mask'&&lesion<1;
-      const overlay=mode==='fusion'&&edge;
-      const v=mode==='pet'?heat[c]:overlay?[.26,1,.85][c]:mask?gray*.62+[.05,.40,.34][c]:mode==='fusion'?gray*(1-alpha*uptake)+heat[c]*alpha*uptake:gray;
-      im.data[idx+c]=Math.round(v*255);
-    }
-    im.data[idx+3]=255;
-  }
-  sc.putImageData(im,0,0);ctx.drawImage(src,0,0,w,h);
-}
 const xs=points.map(p=>p[0]),ys=points.map(p=>p[1]);
 const bounds=[Math.min(...xs),Math.max(...xs),Math.min(...ys),Math.max(...ys)];
 let plotted=[];
@@ -199,12 +178,16 @@ byId('umap').addEventListener('pointermove',e=>{
   if(nearest!==null)byId('topic-info').textContent=topics[nearest][0]+' · '+topics[nearest][1]+' passages in topic';
 });
 byId('umap').addEventListener('pointerleave',drawUMAP);
-for(const [id,fn] of [['forest-filter',drawForest],['mode',drawPET],['opacity',drawPET],['topic',drawUMAP]])byId(id).addEventListener('input',fn);
-const plots={'ecg-icd':drawForest,'pet-ct':drawPET,lab:drawUMAP};
+for(const [id,fn] of [['forest-filter',drawForest],['topic',drawUMAP]])byId(id).addEventListener('input',fn);
+const plots={'ecg-icd':drawForest,lab:drawUMAP};
 let activeProject=null;
 function showProject(){
   const id=location.hash.slice(1);
   const dialog=document.getElementById(id);
+  const onPortfolio=id==='portfolio'||id==='projects'||id==='biomedical'||id==='modeling'||dialog?.tagName==='DIALOG';
+  byId('intro').hidden=onPortfolio;
+  byId('portfolio').hidden=!onPortfolio;
+  if(!dialog||dialog.tagName==='DIALOG'||id==='portfolio'||id==='top') window.scrollTo({top:0,behavior:'instant'});
   if(!dialog||dialog.tagName!=='DIALOG'){
     if(activeProject?.open)activeProject.close();
     activeProject=null;
@@ -217,7 +200,7 @@ function showProject(){
 }
 document.querySelectorAll('dialog').forEach(dialog=>dialog.addEventListener('close',()=>{
   if(location.hash==='#'+dialog.id){
-    history.replaceState(null,'','#projects');
+    history.replaceState(null,'','#portfolio');
     document.querySelector('[data-project="'+dialog.id+'"]')?.focus({preventScroll:true});
   }
   if(activeProject===dialog)activeProject=null;
