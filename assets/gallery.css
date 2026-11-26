@@ -46,3 +46,6 @@ dialog :focus-visible{outline-color:#a63729}
 dialog .effect-track{background:linear-gradient(90deg,#e9e1d6 49.5%,#526d6b 49.5% 50.5%,#e9e1d6 50.5%)}
 dialog .effect-track i.negative{background:#a63729}
 .related-project{margin-top:20px;padding-top:12px;border-top:1px solid var(--edge)}
+.ecg-figure{margin:8px 0 20px}
+.ecg-figure img{display:block;width:100%;height:auto;border:1px solid var(--edge);border-radius:8px}
+.ecg-figure figcaption{margin-top:7px;color:var(--muted);font-size:.92rem}

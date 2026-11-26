@@ -26,9 +26,9 @@ Removing the extra distance-to-R post-filter increased P-wave F1 from **59.39%**
 
 The notebook also reports a legacy comparison cohort with 176 records for P and 199 for R and T. The full-cohort table above gives the primary result.
 
-## Record 11 example
+## Portfolio figures
 
-The separate Trail7 + reproduction2 evaluation on Lead II of Record 11 matched 22 manual peaks within ±75 ms (7 P, 8 R, 7 T), with zero false positives and zero missed peaks. The 200-record summary above is for the intermediate detector using a ±76 ms matching tolerance.
+A single-record comparison shows clinician annotations and detector output, with 18 matches, one false positive and one missed peak within ±75 ms. A separate unfiltered Lead II excerpt shows clinician annotations only. Displayed figures omit record numbers.
 
 ## Run the notebook
 
@@ -39,4 +39,4 @@ The separate Trail7 + reproduction2 evaluation on Lead II of Record 11 matched 2
 
 See PhysioNet for dataset documentation, attribution and licensing. [LUDB v1.0.1](https://physionet.org/content/ludb/1.0.1/)
 
-The portfolio cover and ECG viewer use a three-second Lead II excerpt from public LUDB v1.0.1 record 1, with the dataset’s manual peak annotations. The site includes the plotted samples and annotation offsets only. [PhysioNet LUDB and Open Data Commons Attribution License](https://physionet.org/content/ludb/1.0.1/)
+The portfolio cover uses an unfiltered public LUDB Lead II excerpt with clinician peak annotations. [PhysioNet LUDB and Open Data Commons Attribution License](https://physionet.org/content/ludb/1.0.1/)
