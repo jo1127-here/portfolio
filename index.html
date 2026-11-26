@@ -12,18 +12,18 @@
 <style>
 .effect-chart{display:grid;gap:8px}.effect-chart h4{margin:0;color:var(--ink)}.effect-row{display:grid;grid-template-columns:minmax(100px,1fr) minmax(65px,1fr) 3.55rem;gap:8px;align-items:center;font: .82rem/1.3 ui-monospace,monospace}.effect-track{position:relative;height:9px;border-radius:5px;background:linear-gradient(90deg,#263548 49.5%,#aab9cb 49.5% 50.5%,#263548 50.5%)}.effect-track i{position:absolute;top:1px;height:7px;background:var(--mint);border-radius:4px}.effect-track i.negative{background:var(--pink)}.effect-scale{display:flex;justify-content:space-between;margin:0 3.7rem 0 auto;width:calc(50% - 1.85rem);font:.75rem ui-monospace,monospace;color:var(--muted)}.effect-chart details+details{margin-top:6px}.effect-chart summary{margin-bottom:8px}
 </style>
-<link rel="stylesheet" href="assets/gallery.css">
+<link rel="stylesheet" href="assets/gallery.css?v=light">
 </head>
 <body>
-<nav aria-label="Main navigation"><a class="name" href="#top">Yuxuan Zhou</a><div><a href="#projects">Projects</a><a href="https://github.com/jo1127-here">GitHub</a></div></nav>
+<nav aria-label="Main navigation"><a class="name" href="#top">Yuxuan Zhou</a><div><a href="#biomedical">Biomedical</a><a href="#modeling">Modeling</a><a href="https://github.com/jo1127-here">GitHub</a></div></nav>
 <main id="top">
 <header class="cover">
-<div><p class="eyebrow">Yuxuan Zhou · Portfolio</p><h1>Data in<br><em>focus.</em></h1><p class="lede">Projects in biomedical data science, statistical modeling, and interactive visualization.</p><a class="cover-link" href="#projects">Browse projects</a></div>
+<div><p class="eyebrow">Yuxuan Zhou · Portfolio</p><h1>Data in<br><em>focus.</em></h1><p class="lede">I build visual tools for reading signals, checking models, and exploring patterns in data.</p><a class="cover-link" href="#projects">Browse projects</a></div>
 <figure><img src="assets/cover.webp" width="1125" height="645" alt="Public LUDB Lead II ECG excerpt with P, R and T markers"><figcaption>Lead II excerpt with manual peak annotations · <a href="https://physionet.org/content/ludb/1.0.1/">PhysioNet LUDB</a></figcaption></figure>
 </header>
 <section class="gallery" aria-labelledby="projects">
 <h2 id="projects">Selected projects</h2>
-<div class="project-grid"><a class="project-tile" href="#ecg-icd" data-project="ecg-icd">
+<section class="project-group" id="biomedical"><h3>Biomedical data</h3><p>From finding peaks in ECG to testing clinical associations and aligning medical images.</p><div class="project-grid"><a class="project-tile" href="#ecg-icd" data-project="ecg-icd">
 <img src="assets/forest.webp" alt="Forest plot of aggregate ECG–ICD effect estimates" width="900" height="517">
 <div class="tile-copy"><p class="eyebrow">Clinical statistics</p><h3>ECG–ICD association analysis</h3><p>Mixed-effects models · BH-FDR</p></div>
 </a>
@@ -35,34 +35,35 @@
 <img src="assets/pet.webp" alt="Workflow diagram showing CT and segmentation resampled to the PET grid" width="900" height="517">
 <div class="tile-copy"><p class="eyebrow">Medical imaging</p><h3>PET/CT spatial alignment</h3><p>SimpleITK · PET-grid resampling</p></div>
 </a>
-<a class="project-tile" href="#lab" data-project="lab">
+</div></section>
+<section class="project-group" id="modeling"><h3>Text &amp; market data</h3><p>Two ways to inspect model output: map similar passages and compare estimates of market drivers.</p><div class="project-grid"><a class="project-tile" href="#lab" data-project="lab">
 <img src="assets/lab.webp" alt="UMAP plot of bulletin passages colored by topic" width="900" height="517">
 <div class="tile-copy"><p class="eyebrow">Visual analytics</p><h3>Mapping a university bulletin</h3><p>MiniLM · UMAP · D3.js</p></div>
 </a>
 <a class="project-tile" href="#markets" data-project="markets">
 <img src="assets/markets.webp" alt="Bar chart of selected Graphical RICA coefficients" width="900" height="517">
 <div class="tile-copy"><p class="eyebrow">Financial time series</p><h3>Modeling S&P 500 returns</h3><p>Lagged DAG · Graphical RICA</p></div>
-</a></div>
+</a></div></section>
 </section>
 <dialog id="ecg-icd" aria-label="ECG–ICD association analysis"><form method="dialog" class="dialog-bar"><button>Close project</button></form><article class="card detail-card">
 <div><p class="eyebrow">Clinical statistics</p><h2>ECG–ICD association analysis</h2><p>Estimated associations between standardized T-wave peak amplitude and ICD-9 diagnosis history, accounting for repeated ECGs per patient.</p><div class="tags"><span>Patient random intercepts</span><span>Linear mixed models</span><span>BH-FDR</span><span>95% CI</span></div><p id="forest-summary" class="caption"></p><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/ecg-icd">GitHub project</a></div></div>
 <div class="plot"><div class="controls"><label for="forest-filter">Display</label><select id="forest-filter"><option value="all">Top 10 by absolute effect</option><option value="fdr">BH-FDR q &lt; 0.05</option></select></div><canvas id="forest" role="img" aria-label="Forest plot of standardized coefficients and 95 percent confidence intervals"></canvas><output id="forest-info">Hover over a row for its estimate and adjusted q-value.</output><details><summary>Read estimates as a table</summary><table><thead><tr><th>ICD-9</th><th>Estimate</th><th>95% CI</th><th>q</th></tr></thead><tbody id="forest-table"></tbody></table></details></div>
-</article></dialog>
+<div class="related-project"><a href="#waveform">See how P and T peaks are located</a></div></article></dialog>
 <dialog id="waveform" aria-label="ECG waveform detection"><form method="dialog" class="dialog-bar"><button>Close project</button></form><article class="card detail-card">
 <p class="eyebrow">Signal processing</p><h3>ECG waveform detection</h3><p>Extracted P, R, and T peaks from Lead II and evaluated an intermediate detector against manual annotations on 200 LUDB records.</p><div class="tags"><span>Notch + Butterworth</span><span>Engzee + energy fallback</span><span>R-anchored peak search</span></div>
 <div class="plot"><div class="controls"><label><input id="markers" type="checkbox" checked> Show manual P/R/T annotations</label></div><canvas id="wave" role="img" aria-label="Public Lead II ECG excerpt with manual P, R and T annotations"></canvas><p class="caption">Public LUDB v1.0.1, record 1, Lead II. Markers show manual annotations. <a href="https://physionet.org/content/ludb/1.0.1/">Source and license</a>.</p></div>
 <div class="metrics"><div><strong>88.72%</strong><small>P-wave F1</small></div><div><strong>98.55%</strong><small>R-wave F1</small></div><div><strong>92.72%</strong><small>T-wave F1</small></div></div>
 <p class="caption">Intermediate detector · 76 ms matching tolerance.</p><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/ecg-waveform">GitHub project</a></div>
-</article></dialog>
+<div class="related-project"><a href="#ecg-icd">See how T-wave features are used in association models</a></div></article></dialog>
 <dialog id="pet-ct" aria-label="PET/CT spatial alignment"><form method="dialog" class="dialog-bar"><button>Close project</button></form><article class="card detail-card">
 <p class="eyebrow">Medical imaging</p><h3>PET/CT spatial alignment</h3><p>Resampled CT and lesion masks onto the PET grid in a shared physical frame, checked image geometry, and selected the axial slice with the largest mask area.</p><div class="tags"><span>SimpleITK</span><span>Linear CT interpolation</span><span>Nearest-neighbor masks</span></div>
 <div class="plot"><div class="controls"><label for="mode">Layer</label><select id="mode"><option value="fusion">Fusion</option><option value="ct">CT</option><option value="pet">PET</option><option value="mask">CT + mask</option></select><label for="opacity">PET blend</label><input id="opacity" type="range" min="0" max="100" value="72"></div><canvas id="pet" role="img" aria-label="Synthetic axial imaging phantom with selectable CT, PET, mask and fusion layers"></canvas><p class="caption">Synthetic axial phantom illustrating the overlay workflow.</p></div>
 <div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/pet-ct">GitHub project</a></div>
-</article></dialog>
+<div class="related-project"><a href="#waveform">Explore another biomedical workflow</a></div></article></dialog>
 <dialog id="lab" aria-label="Mapping a university bulletin"><form method="dialog" class="dialog-bar"><button>Close project</button></form><article class="card detail-card">
 <div><p class="eyebrow">Interactive visualization · STATS 401</p><h2>Mapping a university bulletin</h2><p>Published Lab 8 explores related passages in the Duke Kunshan University undergraduate bulletin. Select a topic to see where its passages land in the two-dimensional projection.</p><div class="tags"><span>MiniLM embeddings</span><span>UMAP</span><span>K-means</span><span>TF-IDF</span><span>D3.js in the full lab</span></div><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/stats401-lab8">GitHub project</a><a href="projects/stats401-lab8/lab8/index.html">Explore full lab</a></div></div>
 <div class="plot"><div class="controls"><label for="topic">Topic</label><select id="topic"><option value="all">All topics</option></select></div><canvas id="umap" role="img" aria-label="UMAP projection of bulletin passages colored by cluster"></canvas><output id="topic-info"></output><p class="caption">Each point represents one passage. Coordinates come from the published Lab 8 visualization.</p></div>
-</article></dialog>
+<div class="related-project"><a href="#markets">Explore model estimates on market data</a></div></article></dialog>
 <dialog id="markets" aria-label="Modeling S&P 500 returns"><form method="dialog" class="dialog-bar"><button>Close project</button></form><article class="card detail-card">
 <div><p class="eyebrow">Financial time series · STATS 302</p><h2>Modeling S&amp;P 500 returns</h2><p>Engineered lagged market features from Yahoo Finance and used a sector-level causal graph to explore potential drivers of index returns.</p><div class="tags"><span>PCA</span><span>Lagged DAG</span><span>FastICA</span><span>Graphical RICA</span><span>Cross-moment estimation</span></div><p class="caption">The unknown-graph check did not identify the full graph. The coefficients are exploratory and depend on the model assumptions.</p><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/stats302">GitHub project</a></div></div>
 <div class="plot effect-chart"><h4>Selected coefficient estimates</h4><details open><summary>Graphical RICA · lagged inputs</summary><div class="effect-row"><span>10Y yield</span><span class="effect-track" aria-hidden="true"><i class="positive" style="left:50.00%;width:49.31%"></i></span><span>+0.986</span></div>
@@ -74,7 +75,7 @@
 <div class="effect-row"><span>Technology return</span><span class="effect-track" aria-hidden="true"><i class="positive" style="left:50.00%;width:30.38%"></i></span><span>+0.608</span></div>
 <div class="effect-row"><span>Energy return</span><span class="effect-track" aria-hidden="true"><i class="negative" style="left:41.57%;width:8.43%"></i></span><span>-0.169</span></div>
 <div class="effect-scale" aria-hidden="true"><span>−1</span><span>0</span><span>+1</span></div></details><p class="caption">Saved notebook estimates. Each estimator is shown with its own inputs and time alignment.</p></div>
-</article></dialog>
+<div class="related-project"><a href="#lab">Explore patterns in a text corpus</a></div></article></dialog>
 </div>
 </main>
 <footer><span>Yuxuan Zhou · Selected projects</span><a href="https://github.com/jo1127-here">GitHub profile</a></footer>
@@ -82,7 +83,7 @@
 <script>
 const {forest,points,topics,wave}=JSON.parse(document.querySelector('#data').textContent);
 const byId=id=>document.getElementById(id);
-const colors=['#68edc8','#91a9ff','#ff99b1','#ffd479','#c8a3ff','#79dbff','#f39d72','#b9e684','#f38ddf','#c6cbdc','#76bcc1','#ffb7e0'];
+const colors=['#187369','#3659a0','#ab3e30','#8a640e','#773f9d','#24788a','#a44e23','#567121','#9d367e','#545982','#53777b','#a32a58'];
 function surface(id){
   const canvas=byId(id), {width,height}=canvas.getBoundingClientRect(), dpr=devicePixelRatio||1;
   canvas.width=Math.round(width*dpr); canvas.height=Math.round(height*dpr);
@@ -95,12 +96,12 @@ function line(ctx,x1,y1,x2,y2,color,width=1){
 function dot(ctx,x,y,r,color){
   ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
 }
-function text(ctx,msg,x,y,color='#abb9cb'){
+function text(ctx,msg,x,y,color='#465e60'){
   ctx.fillStyle=color;ctx.font='12px ui-monospace,monospace';ctx.fillText(msg,x,y);
 }
 function grid(ctx,w,h){
-  for(let x=0;x<w;x+=24)line(ctx,x,0,x,h,'#202d3e');
-  for(let y=0;y<h;y+=24)line(ctx,0,y,w,y,'#202d3e');
+  for(let x=0;x<w;x+=24)line(ctx,x,0,x,h,'#e6e4d9');
+  for(let y=0;y<h;y+=24)line(ctx,0,y,w,y,'#e6e4d9');
 }
 let visible=[],rowGap=0;
 function drawForest(){
@@ -111,13 +112,13 @@ function drawForest(){
   const x=n=>59+(w-76)*(n+limit)/(2*limit);
   rowGap=(h-60)/Math.max(1,visible.length);
   for(const v of [-limit,-limit/2,0,limit/2,limit]){
-    line(ctx,x(v),8,x(v),h-45,v===0?'#8493aa':'#263448');
+    line(ctx,x(v),8,x(v),h-45,v===0?'#8493aa':'#dbddd2');
     ctx.textAlign='center';text(ctx,v.toFixed(2),x(v),h-27);
   }
   text(ctx,'Standardized coefficient',w/2,h-6);
   ctx.textAlign='left';
   for(const [i,r] of visible.entries()){
-    const y=8+rowGap*(i+.5), c=r.b<0?'#8ca8ff':'#66ebc6';
+    const y=8+rowGap*(i+.5), c=r.b<0?'#45609b':'#187369';
     text(ctx,r.code+(r.sig?'*':''),0,y+4);line(ctx,x(r.lo),y,x(r.hi),y,c,2);dot(ctx,x(r.b),y,4,c);
   }
   const body=byId('forest-table');body.replaceChildren();
@@ -142,14 +143,14 @@ function drawWave(){
   const px=i=>45+(w-58)*i/(values.length-1);
   const py=v=>24+(h-60)*(hi-v)/(hi-lo);
   for(let v=Math.ceil(lo*4)/4;v<=hi;v+=.25){
-    line(ctx,45,py(v),w-13,py(v),'#263448');
+    line(ctx,45,py(v),w-13,py(v),'#dbddd2');
     text(ctx,v.toFixed(2),1,py(v)+3);
   }
   for(let tick=0;tick*fs<values.length;tick++){
-    line(ctx,px(tick*fs),24,px(tick*fs),h-36,'#263448');
+    line(ctx,px(tick*fs),24,px(tick*fs),h-36,'#dbddd2');
     text(ctx,tick+' s',px(tick*fs),h-12);
   }
-  ctx.strokeStyle='#66ebc6';ctx.lineWidth=1.6;ctx.beginPath();
+  ctx.strokeStyle='#187369';ctx.lineWidth=1.6;ctx.beginPath();
   for(const [i,v] of values.entries()){
     if(i===0)ctx.moveTo(px(i),py(v));else ctx.lineTo(px(i),py(v));
   }
@@ -196,7 +197,7 @@ function drawUMAP(){
   plotted=points.map(([x,y,k])=>[w/2+(x-(a+b)/2)*scale,h/2-(y-(c+d)/2)*scale,k]);
   for(const faded of [true,false])for(const [x,y,k] of plotted){
     if((topic!=='all'&&Number(topic)!==k)!==faded)continue;
-    ctx.globalAlpha=faded?.18:.83;dot(ctx,x,y,faded?1.6:2.9,faded?'#8291a5':colors[k]);
+    ctx.globalAlpha=faded?.18:.83;dot(ctx,x,y,faded?1.6:2.9,faded?'#526572':colors[k]);
   }
   ctx.globalAlpha=1;
   byId('topic-info').textContent=topic==='all'?points.length+' passages · '+topics.length+' topics':topics[topic][0]+' · '+topics[topic][1]+' passages';
