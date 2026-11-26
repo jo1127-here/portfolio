@@ -69,3 +69,6 @@ dialog .plot,.result-note{background:#f2f5fc}
 .result-note{border:1px solid var(--edge);border-radius:8px;padding:14px}
 .result-note p+p{margin-top:8px}
 dialog button,dialog select{background:#f8faff}
+
+.intro-bio{max-width:48ch;font-size:1rem}
+.intro-bio p+p{margin-top:.65rem}
