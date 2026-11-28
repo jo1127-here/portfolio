@@ -12,7 +12,7 @@
 <style>
 .effect-chart{display:grid;gap:8px}.effect-chart h4{margin:0;color:var(--ink)}.effect-row{display:grid;grid-template-columns:minmax(100px,1fr) minmax(65px,1fr) 3.55rem;gap:8px;align-items:center;font: .82rem/1.3 ui-monospace,monospace}.effect-track{position:relative;height:9px;border-radius:5px;background:linear-gradient(90deg,#263548 49.5%,#aab9cb 49.5% 50.5%,#263548 50.5%)}.effect-track i{position:absolute;top:1px;height:7px;background:var(--mint);border-radius:4px}.effect-track i.negative{background:var(--pink)}.effect-scale{display:flex;justify-content:space-between;margin:0 3.7rem 0 auto;width:calc(50% - 1.85rem);font:.75rem ui-monospace,monospace;color:var(--muted)}.effect-chart details+details{margin-top:6px}.effect-chart summary{margin-bottom:8px}
 </style>
-<link rel="stylesheet" href="assets/gallery.css?v=larger-photos">
+<link rel="stylesheet" href="assets/gallery.css?v=project-stories">
 </head>
 <body>
 <nav aria-label="Main navigation"><a class="name" href="#top">Jo.</a><div><a href="#portfolio">Portfolio</a><a href="https://github.com/jo1127-here">GitHub</a></div></nav>
@@ -24,9 +24,10 @@
 <p>I want to become a healthcare data scientist, building clinical AI tools and testing whether they help clinicians make decisions.</p>
 <p>Outside of school and research, I enjoy baseball and karaoke.</p>
 </div><a class="cover-link" href="#portfolio">View portfolio</a></div>
-<div class="cover-photos">
-  <div class="photo-frame photo-frame-back"><img alt="Jo photographed from behind" hidden></div>
-  <div class="photo-frame photo-frame-front"><img alt="Front-facing portrait of Jo" hidden></div>
+<div class="cover-hobbies" aria-hidden="true">
+  <span class="hobby-card hobby-baseball">⚾</span>
+  <span class="hobby-card hobby-karaoke">🎤</span>
+  <span class="hobby-star">✦</span>
 </div>
 </header>
 <section class="gallery" id="portfolio" aria-labelledby="projects" hidden><a class="portfolio-home" href="#top">Back to home</a>
@@ -41,7 +42,7 @@
 </a>
 <a class="project-tile" href="#pet-ct" data-project="pet-ct">
 <img src="assets/pet.webp" alt="Workflow diagram showing CT and segmentation resampled to the PET grid" width="900" height="517">
-<div class="tile-copy"><p class="eyebrow">Medical imaging</p><h3>PET/CT spatial alignment</h3><p>Aligned PET/CT scans and compared lesion predictions with clinician masks.</p></div>
+<div class="tile-copy"><p class="eyebrow">Medical imaging</p><h3>PET/CT spatial alignment</h3><p>Resampled CT and an existing lesion mask onto the PET voxel grid.</p></div>
 </a>
 </div></section>
 <section class="project-group" id="modeling"><h3>Beyond Healthcare</h3><p>I use interactive visualization to explore patterns in text, networks, and geography. I also use statistical models to study financial time series.</p>
@@ -66,12 +67,12 @@
 </a></div></section>
 </section>
 <dialog id="ecg-icd" aria-label="ECG–ICD association analysis"><form method="dialog" class="dialog-bar"><button>Close project</button></form><article class="card detail-card">
-<div><p class="eyebrow">Clinical statistics</p><h2>ECG–ICD association analysis</h2><dl class="project-method"><dt>Aim</dt><dd>Test which ICD-9 diagnoses are associated with standardized T-wave amplitude.</dd><dt>Method</dt><dd>Fit linear mixed-effects models with patient random intercepts for repeated ECGs, then applied BH-FDR correction.</dd></dl><p id="forest-summary" class="caption"></p><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/ecg-icd">GitHub project</a></div></div>
+<div><p class="eyebrow">Clinical statistics</p><h2>ECG–ICD association analysis</h2><dl class="project-method"><dt>Aim</dt><dd>Test which ICD-9 diagnoses are associated with standardized T-wave amplitude.</dd><dt>Challenge</dt><dd>Multiple ECGs can come from the same patient, and testing many diagnoses increases the chance of false discoveries.</dd><dt>Approach</dt><dd>Fit linear mixed-effects models with patient random intercepts for repeated ECGs, then applied BH-FDR correction.</dd></dl><p id="forest-summary" class="caption"></p><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/ecg-icd">GitHub project</a></div></div>
 <h3 class="output-title">Output</h3>
 <div class="plot"><div class="controls"><label for="forest-filter">Display</label><select id="forest-filter"><option value="all">Top 10 by absolute effect</option><option value="fdr">BH-FDR q &lt; 0.05</option></select></div><canvas id="forest" role="img" aria-label="Forest plot of standardized coefficients and 95 percent confidence intervals"></canvas><output id="forest-info">Hover over a row for its estimate and adjusted q-value.</output><details><summary>Read estimates as a table</summary><table><thead><tr><th>ICD-9</th><th>Estimate</th><th>95% CI</th><th>q</th></tr></thead><tbody id="forest-table"></tbody></table></details></div>
 <div class="related-project"><a href="#waveform">See how P and T peaks are located</a></div></article></dialog>
 <dialog id="waveform" aria-label="ECG waveform detection"><form method="dialog" class="dialog-bar"><button>Close project</button></form><article class="card detail-card">
-<p class="eyebrow">Signal processing</p><h3>ECG waveform detection</h3><dl class="project-method"><dt>Aim</dt><dd>Automatically locate P, R, and T peaks and evaluate detection against clinician annotations.</dd><dt>Method</dt><dd>Filtered Lead II recordings, found R peaks with Engzee and an energy-based fallback, then searched for P and T peaks in R-anchored windows.</dd></dl>
+<p class="eyebrow">Signal processing</p><h3>ECG waveform detection</h3><dl class="project-method"><dt>Aim</dt><dd>Automatically locate P, R, and T peaks and evaluate detection against clinician annotations.</dd><dt>Challenge</dt><dd>P and T peaks are less prominent than R peaks and can be hard to distinguish from noise or nearby waves.</dd><dt>Approach</dt><dd>Filtered Lead II recordings, found R peaks with Engzee and an energy-based fallback, then searched for P and T peaks in R-anchored windows.</dd></dl>
 <h3 class="output-title">Output</h3>
 <section aria-labelledby="ecg-example">
 <h4 id="ecg-example">Clinician annotations vs. my detector</h4>
@@ -90,20 +91,19 @@
 <div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/ecg-waveform">GitHub project</a></div>
 <div class="related-project"><a href="#ecg-icd">See how T-wave features are used in association models</a></div></article></dialog>
 <dialog id="pet-ct" aria-label="PET/CT spatial alignment"><form method="dialog" class="dialog-bar"><button>Close project</button></form><article class="card detail-card">
-<p class="eyebrow">Medical imaging</p><h3>PET/CT spatial alignment</h3><dl class="project-method"><dt>Aim</dt><dd>Align PET, CT, and lesion masks and compare lesion predictions with clinician ground truth.</dd><dt>Method</dt><dd>Resampled CT and lesion masks onto the PET grid with SimpleITK using linear and nearest-neighbor interpolation, respectively. I ran nnU-Net for lesion segmentation and compared predictions with clinician masks.</dd></dl>
+<p class="eyebrow">Medical imaging</p><h3>PET/CT spatial alignment</h3><dl class="project-method"><dt>Aim</dt><dd>Put CT, PET, and an existing lesion mask on the same voxel grid for slice-by-slice comparison.</dd><dt>Challenge</dt><dd>The scans and mask use different voxel grids. An array index can therefore refer to different physical locations across volumes.</dd><dt>Approach</dt><dd>Resampled CT and lesion masks onto the PET grid with SimpleITK using linear and nearest-neighbor interpolation, respectively. PET supplied the reference size, spacing, origin, and orientation. The pipeline uses an identity transform because the inputs already share a physical coordinate frame.</dd></dl>
 <h3 class="output-title">Output</h3>
-<div class="result-note"><p><strong>Alignment check.</strong> In the example output, the CT and lesion masks matched the PET grid. The lesion mask had 1,299 nonzero voxels before and after resampling.</p>
-<p><strong>61.69%</strong> positive mean Dice, as reported in my nnU-Net evaluation. This metric summarizes the evaluation, while a mask overlay shows an individual example.</p>
-<p>The linked GitHub project contains the spatial alignment code. My nnU-Net training and inference code is not published there.</p></div>
+<figure class="ecg-figure alignment-workflow"><img src="assets/pet.webp" width="900" height="517" alt="SimpleITK workflow for resampling CT and a lesion mask onto the PET reference grid"><figcaption>Resampling workflow. CT intensities use linear interpolation and mask labels use nearest-neighbor interpolation.</figcaption></figure>
+<div class="result-note"><p><strong>Example validation.</strong> The output CT and lesion mask both matched the PET geometry. The mask contained <strong>1,299 nonzero voxels</strong> before and after resampling in this example.</p></div>
 <div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/pet-ct">GitHub project</a></div>
 <div class="related-project"><a href="#waveform">Explore another biomedical workflow</a></div></article></dialog>
 <dialog id="lab" aria-label="Mapping a university bulletin"><form method="dialog" class="dialog-bar"><button>Close project</button></form><article class="card detail-card">
-<div><p class="eyebrow">Interactive visualization · STATS 401</p><h2>Mapping a university bulletin</h2><dl class="project-method"><dt>Aim</dt><dd>Help readers explore how topics are organized across a university bulletin.</dd><dt>Method</dt><dd>Embedded passages with MiniLM, grouped them with K-means, and projected them with UMAP for an interactive, filterable map.</dd></dl><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/stats401-lab8">GitHub project</a><a href="projects/stats401-lab8/lab8/index.html">Open full interactive Lab 8</a></div></div>
+<div><p class="eyebrow">Interactive visualization · STATS 401</p><h2>Mapping a university bulletin</h2><dl class="project-method"><dt>Aim</dt><dd>Help readers explore how topics are organized across a university bulletin.</dd><dt>Challenge</dt><dd>A table of contents shows formal sections, but similar topics can appear in different sections and are hard to find through browsing alone.</dd><dt>Approach</dt><dd>Embedded passages with MiniLM, grouped them with K-means, and projected them with UMAP for an interactive, filterable map.</dd></dl><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/stats401-lab8">GitHub project</a><a href="projects/stats401-lab8/lab8/index.html">Open full interactive Lab 8</a></div></div>
 <h3 class="output-title">Output</h3>
 <div class="plot"><div class="controls"><label for="topic">Topic</label><select id="topic"><option value="all">All topics</option></select></div><canvas id="umap" role="img" aria-label="UMAP projection of bulletin passages colored by cluster"></canvas><output id="topic-info"></output><p class="caption">Each point represents one passage. Coordinates come from the published Lab 8 visualization.</p></div>
 <div class="related-project"><a href="#markets">Explore model estimates on market data</a></div></article></dialog>
 <dialog id="markets" aria-label="Modeling S&P 500 returns"><form method="dialog" class="dialog-bar"><button>Close project</button></form><article class="card detail-card">
-<div><p class="eyebrow">Financial time series · STATS 302</p><h2>Modeling S&amp;P 500 returns</h2><dl class="project-method"><dt>Aim</dt><dd>Explore which market factors are associated with movements in S&amp;P 500 returns.</dd><dt>Method</dt><dd>Built market features from Yahoo Finance and compared Graphical RICA and cross-moment estimates using a lagged sector-level causal graph.</dd></dl><p class="caption">The unknown-graph check did not identify the full graph. The coefficients are exploratory and depend on the model assumptions.</p><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/stats302">GitHub project</a></div></div>
+<div><p class="eyebrow">Financial time series · STATS 302</p><h2>Modeling S&amp;P 500 returns</h2><dl class="project-method"><dt>Aim</dt><dd>Explore which market factors are associated with movements in S&amp;P 500 returns.</dd><dt>Challenge</dt><dd>Market variables move together and at different time offsets, which makes it hard to interpret individual estimates.</dd><dt>Approach</dt><dd>Built market features from Yahoo Finance and compared Graphical RICA and cross-moment estimates using a lagged sector-level causal graph.</dd></dl><p class="caption">The unknown-graph check did not identify the full graph. The coefficients are exploratory and depend on the model assumptions.</p><div class="links"><a href="https://github.com/jo1127-here/portfolio/tree/main/projects/stats302">GitHub project</a></div></div>
 <h3 class="output-title">Output</h3>
 <div class="plot effect-chart"><h4>Selected coefficient estimates</h4><details open><summary>Graphical RICA · lagged inputs</summary><div class="effect-row"><span>10Y yield</span><span class="effect-track" aria-hidden="true"><i class="positive" style="left:50.00%;width:49.31%"></i></span><span>+0.986</span></div>
 <div class="effect-row"><span>13-week yield</span><span class="effect-track" aria-hidden="true"><i class="positive" style="left:50.00%;width:49.13%"></i></span><span>+0.983</span></div>
